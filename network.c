@@ -1,11 +1,12 @@
 #include "network.h"
+#include "debug.h"
 
 // Cross-platform network initialization
 int network_init(NetworkServer *server, int port) {
 #ifdef _WIN32
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        fprintf(stderr, "WSAStartup failed with error %d\n", WSAGetLastError());
+        MBError("WSAStartup failed");
         return -1;
     }
 #endif
@@ -14,7 +15,7 @@ int network_init(NetworkServer *server, int port) {
     server->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (server->server_socket == -1) {
-        fprintf(stderr, "socket() failed with error %d\n", errno);
+        MBError("socket() failed");
 #ifdef _WIN32
         WSACleanup();
 #endif
@@ -26,13 +27,13 @@ int network_init(NetworkServer *server, int port) {
     server->server_addr.sin_port = htons(port);
 
     if (bind(server->server_socket, (struct sockaddr *)&server->server_addr, sizeof(server->server_addr)) == -1) {
-        fprintf(stderr, "bind() failed with error %d\n", errno);
+        MBError("bind() failed");
         network_cleanup(server);
         return -1;
     }
 
     if (listen(server->server_socket, 5) == -1) {
-        fprintf(stderr, "listen() failed with error %d\n", errno);
+        MBError("listen() failed");
         network_cleanup(server);
         return -1;
     }
@@ -44,7 +45,7 @@ int network_init(NetworkServer *server, int port) {
 int send_file_content(NetworkServer *server, int client_socket, const char *file_path) {
     FILE *file = fopen(file_path, "r");
     if (!file) {
-        fprintf(stderr, "Could not open file: %s\n", file_path);
+        MBError("Could not open file");
         return -1;
     }
 
@@ -79,7 +80,7 @@ int network_host(NetworkServer *server, const char* file_path) {
 
             // Serve content from a file
             if (send_file_content(server, client_socket, file_path) != 0) {
-                fprintf(stderr, "Failed to send file content.\n");
+                MBError("Failed to send file content");
                 break;
             }
         }
