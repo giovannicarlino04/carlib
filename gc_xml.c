@@ -73,7 +73,7 @@ int parse_tag(const char **xml, char **tag) {
 }
 
 // Function to parse an XML string and return the root node
-XmlNode *xml_parse(const char *xml) {
+XmlNode *gc_xml_parse(const char *xml) {
     XmlNode *root = NULL;
     XmlNode *current_parent = NULL;
 

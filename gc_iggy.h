@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include "gc_memory.h"
+#include "gc_xml.h"
 
 #define uint32 uint32_t
 #define uint64 uint64_t
@@ -101,7 +103,9 @@ struct IGGYFlashHeader64
     uint32 unk_B0;               // 0xB0
     uint32 unk_B4;               // 0xB4
 } ;
-
+int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfiles, unsigned int num_subfiles);
 int gc_parse_iggy(const char *filename, struct IGGYHeader Header);
+XmlNode *gc_iggyDoXml(const char *file_path);
+int gc_xmlDoIggy(const char *xml_data, const char *output_path);
 
 #endif //IGGY_H
