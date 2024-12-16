@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "gc_xenoverse_cms.h": "c",
+        "gc_memory.h": "c"
+    }
+}
