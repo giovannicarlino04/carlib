@@ -1,5 +1,7 @@
 #include "gc_xml.h"
 #include "gc_memory.h"
+#include "gc_common.h"
+#include "gc_debug.h"
 
 // Function to create a new XML node
 XmlNode *gc_xml_create_node(const char *tag, const char *content) {
@@ -71,6 +73,48 @@ int parse_tag(const char **xml, char **tag) {
 
     return 0;  // Error
 }
+// Helper function to write an XML node and its children recursively
+void gc_xml_write_node(FILE *file, XmlNode *node) {
+    if (!node) {
+        return;
+    }
+
+    // Write the opening tag
+    fprintf(file, "<%s>", node->tag);
+
+    // Write the content of the node (if any)
+    if (node->content) {
+        fprintf(file, "%s", node->content);
+    }
+
+    // If the node has children, write them recursively
+    if (node->children) {
+        gc_xml_write_node(file, node->children);
+    }
+
+    // Write the closing tag
+    fprintf(file, "</%s>", node->tag);
+
+    // Move to the next sibling node
+    gc_xml_write_node(file, node->next);
+}
+
+// Function to write the entire XML tree to a file
+int gc_xml_write(FILE *file, XmlNode *root) {
+    if (!file) {
+        return -1;  // Error opening file
+    }
+
+    // Write the XML declaration (optional, can be added if needed)
+    fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+
+    // Write the root node and its children
+    gc_xml_write_node(file, root);
+
+    // Close the file
+    fclose(file);
+    return 0;  // Success
+}
 
 // Function to parse an XML string and return the root node
 XmlNode *gc_xml_parse(const char *xml) {
@@ -132,21 +176,4 @@ void gc_xml_free(XmlNode *node) {
         }
         gc_free(node);
     }
-}
-
-// Function to print XML structure (for debugging)
-void gc_xml_print(XmlNode *node, int indent) {
-    if (!node) return;
-
-    for (int i = 0; i < indent; i++) {
-        printf("  "); // Indentation
-    }
-
-    printf("<%s>%s</%s>\n", node->tag, node->content ? node->content : "", node->tag);
-
-    // Print children nodes
-    gc_xml_print(node->children, indent + 1);
-
-    // Print next sibling nodes
-    gc_xml_print(node->next, indent);
 }

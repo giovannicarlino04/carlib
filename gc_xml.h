@@ -14,19 +14,10 @@ typedef struct XmlNode {
     struct XmlNode *children; // Child nodes (for nested elements)
 } XmlNode;
 
-// Function to create a new XML node
 XmlNode *gc_xml_create_node(const char *tag, const char *content);
-
-// Function to add a child node to a parent
-void gc_xml_add_child(XmlNode *parent, XmlNode *child);
-
-// Function to parse an XML string and return the root node
 XmlNode *gc_xml_parse(const char *xml);
-
-// Function to free an XML node and its children
+void gc_xml_add_child(XmlNode *parent, XmlNode *child);
 void gc_xml_free(XmlNode *node);
-
-// Function to print XML structure (for debugging)
-void gc_xml_print(XmlNode *node, int indent);
-
+void gc_xml_write_node(FILE *file, XmlNode *node);
+int gc_xml_write(FILE *file, XmlNode *root);
 #endif // XML_H

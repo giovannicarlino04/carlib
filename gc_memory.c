@@ -40,7 +40,8 @@ void* gc_malloc(gc_size size) {
                 free_list = current->next;
             }
 
-            return (gc_byte*)current + sizeof(Block);  // Return the memory just after the Block header
+            // Return the memory just after the Block header
+            return (gc_byte*)current + sizeof(Block);
         }
 
         prev = current;
@@ -81,6 +82,7 @@ void gc_free(void* ptr) {
     // Optional: Merge adjacent free blocks (coalescing)
     Block* current = free_list;
     while (current && current->next) {
+        // Check if the current block and next block are adjacent
         if ((gc_byte*)current + current->size + sizeof(Block) == (gc_byte*)current->next) {
             // Coalesce adjacent blocks
             current->size += current->next->size + sizeof(Block);
@@ -90,3 +92,4 @@ void gc_free(void* ptr) {
         }
     }
 }
+

@@ -104,8 +104,7 @@ struct IGGYFlashHeader64
     uint32 unk_B4;               // 0xB4
 } ;
 int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfiles, unsigned int num_subfiles);
-int gc_parse_iggy(const char *filename, struct IGGYHeader Header);
-XmlNode *gc_iggyDoXml(const char *file_path);
-int gc_xmlDoIggy(const char *xml_data, const char *output_path);
+struct IGGYHeader gc_parse_iggy(const char *filename);
+int ends_with(const char *str, const char *suffix);
 
 #endif //IGGY_H

@@ -1,20 +1,21 @@
 
 #include "gc_iggy.h"
+#include "gc_common.h"
 
-int gc_parse_iggy(const char *filename, struct IGGYHeader header)
+struct IGGYHeader gc_parse_iggy(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
+    struct IGGYHeader header = {0};
+
     if (!file)
     {
         gc_MessageBox("File Opening Error", MB_ICONERROR);
-        return -1;
     }
 
     if (fread(&header, sizeof(header), 1, file) != 1)
     {
         gc_MessageBox("Header Read Error", MB_ICONERROR);
         fclose(file);
-        return -1;
     }
 
     // Verifica la firma
@@ -22,7 +23,6 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
     {
         fprintf(stderr, "Firma del file non valida\n");
         fclose(file);
-        return -1;
     }
 
     // Stampa l'intestazione del file
@@ -58,7 +58,6 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
     {
         gc_MessageBox("gc_malloc Error", MB_ICONERROR);
         fclose(file);
-        return -1;
     }
 
     if (fread(subfiles, subfile_size, header.num_subfiles, file) != header.num_subfiles)
@@ -66,7 +65,6 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
         gc_MessageBox("Subfile Read Error", MB_ICONERROR);
         gc_free(subfiles);
         fclose(file);
-        return -1;
     }
 
     // Stampa le voci dei sottotitoli
@@ -89,7 +87,6 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
             gc_MessageBox("Flash Header (64-bit) Read Error", MB_ICONERROR);
             gc_free(subfiles);
             fclose(file);
-            return -1;
         }
 
         // Stampa dell'intestazione Flash (64 bit)
@@ -128,7 +125,6 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
             gc_MessageBox("Flash Header Read Error", MB_ICONERROR);
             gc_free(subfiles);
             fclose(file);
-            return -1;
         }
 
         // Stampa dell'intestazione Flash (32 bit)
@@ -161,12 +157,11 @@ int gc_parse_iggy(const char *filename, struct IGGYHeader header)
     else
     {
         printf("ERROR - UNKNOWN VERSION, CAN'T PROCEED");
-        return 1;
     }
     // Pulisci
     gc_free(subfiles);
     fclose(file);
-    return 0;
+    return header;
 }
 // Function to parse the subfiles from an IGGY file
 int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfiles, unsigned int num_subfiles) {
@@ -177,7 +172,7 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
 
     // Assume that the subfiles start right after the header.
     // We read the subfiles into the provided subfiles array.
-    fseek(file, sizeof(struct IGGYHeader), SEEK_SET);  // Skip header
+    fseek(file, subfiles->offset, SEEK_SET);  // Skip header
 
     // Read the subfile entries into the subfiles array
     for (unsigned int i = 0; i < num_subfiles; i++) {
@@ -190,41 +185,44 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
     fclose(file);
     return 0;  // Success
 }
+int gc_iggyDoXml(const char *file_path, const char *xml_output_path) {
+    printf("Start processing IGGY file: %s\n", file_path);
 
-
-// Function to convert IGGY data to XML format
-XmlNode *gc_iggyDoXml(const char *file_path) {
     // Parse the IGGY file header
-    struct IGGYHeader header;
-    if (gc_parse_iggy(file_path, header) != 0) {
-        return NULL;  // Error parsing the IGGY file
-    }
+    struct IGGYHeader header = gc_parse_iggy(file_path);
+    printf("Parsed IGGY header: version=%u, num_subfiles=%u\n", header.version, header.num_subfiles);
 
-    // Allocate memory for the subfiles array
-    struct IGGYSubFileEntry *subfiles = malloc(header.num_subfiles * sizeof(struct IGGYSubFileEntry));
+    gc_size subfile_size = sizeof(struct IGGYSubFileEntry);
+    struct IGGYSubFileEntry *subfiles = gc_malloc(header.num_subfiles * subfile_size);
     if (!subfiles) {
-        return NULL;  // Memory allocation failed
+        printf("Memory allocation failed for subfiles\n");
+        return -2;  // Memory allocation failed
     }
+    printf("Allocated memory for %u subfiles\n", header.num_subfiles);
 
-    // Read subfiles data from the IGGY file (this would depend on your parser logic)
-    // Assuming `gc_parse_iggy_subfiles` is a function that reads the subfiles data
+    // Read subfiles data from the IGGY file
     if (gc_parse_iggy_subfiles(file_path, subfiles, header.num_subfiles) != 0) {
-        free(subfiles);
-        return NULL;  // Error reading subfiles
+        gc_free(subfiles);
+        printf("Error reading subfiles from IGGY file\n");
+        return -3;  // Error reading subfiles
     }
+    printf("Successfully read %u subfiles from IGGY file\n", header.num_subfiles);
 
     // Create the root XML node, representing the IGGY file
     XmlNode *root = gc_xml_create_node("IGGY", "Root of IGGY file");
+    printf("Created root XML node: IGGY\n");
 
     // Add version information as XML child
     char version_str[32];
     snprintf(version_str, sizeof(version_str), "%u", header.version);
     XmlNode *version_node = gc_xml_create_node("Version", version_str);
     gc_xml_add_child(root, version_node);
+    printf("Added Version node with value: %s\n", version_str);
 
     // Add subfiles to the XML
     XmlNode *subfiles_node = gc_xml_create_node("Subfiles", "");
     gc_xml_add_child(root, subfiles_node);
+    printf("Added Subfiles node to XML\n");
 
     // Iterate over the subfiles and create XML nodes for each
     for (int i = 0; i < header.num_subfiles; ++i) {
@@ -234,59 +232,86 @@ XmlNode *gc_iggyDoXml(const char *file_path) {
         char subfile_id[32];
         snprintf(subfile_id, sizeof(subfile_id), "%u", subfile.id);
         XmlNode *subfile_node = gc_xml_create_node("Subfile", subfile_id);
+        printf("Created Subfile node with ID: %s\n", subfile_id);
         
         // Add size and offset information to the subfile XML node
         char size_str[32];
         snprintf(size_str, sizeof(size_str), "Size: %u", subfile.size);
         XmlNode *size_node = gc_xml_create_node("Size", size_str);
         gc_xml_add_child(subfile_node, size_node);
+        printf("Added Size node with value: %s\n", size_str);
         
         char offset_str[32];
         snprintf(offset_str, sizeof(offset_str), "Offset: %u", subfile.offset);
         XmlNode *offset_node = gc_xml_create_node("Offset", offset_str);
         gc_xml_add_child(subfile_node, offset_node);
+        printf("Added Offset node with value: %s\n", offset_str);
         
         // Add the subfile node to the "Subfiles" node
         gc_xml_add_child(subfiles_node, subfile_node);
+        printf("Added Subfile node to Subfiles list\n");
     }
 
-    // Clean up allocated memory for subfiles
-    free(subfiles);
+    // Generate XML output to a file
+    printf("Generating XML output to file: %s\n", xml_output_path);
+    FILE *xml_file = fopen(xml_output_path, "w");
+    if (!xml_file) {
+        gc_free(subfiles);
+        printf("Error opening XML output file: %s\n", xml_output_path);
+        return -4;  // Error opening XML output file
+    }
 
-    return root; // Return the XML representation of the IGGY file
+    gc_xml_write(xml_file, root);  // Assuming this function writes the XML to the file
+    printf("Successfully wrote XML to file: %s\n", xml_output_path);
+
+    // Clean up allocated memory for subfiles and close the file
+    gc_free(subfiles);
+    fclose(xml_file);
+    printf("Cleaned up and closed XML file\n");
+
+    return 0;  // Success
 }
-
-// Function to convert XML back into IGGY data
 int gc_xmlDoIggy(const char *xml_data, const char *output_path) {
+    printf("Start processing XML data: %s\n", xml_data);
+
     // Parse the XML data into an XmlNode structure
     XmlNode *root = gc_xml_parse(xml_data);
     if (!root) {
+        printf("Error parsing XML data\n");
         return -1;  // Error parsing XML
     }
+    printf("Parsed XML root node: %s\n", root->tag);
 
     // Extract version from the XML
     XmlNode *version_node = root->children;
     if (!version_node || strcmp(version_node->tag, "Version") != 0) {
+        printf("Error: missing or malformed version information\n");
         return -2;  // Error: missing or malformed version information
     }
     unsigned int version = atoi(version_node->content);
+    printf("Extracted version from XML: %u\n", version);
 
     // Create the IGGYHeader structure
     struct IGGYHeader header;
     header.version = version;
     header.num_subfiles = 0;  // Will be updated after processing subfiles
+    printf("Created IGGYHeader: version=%u, num_subfiles=%u\n", header.version, header.num_subfiles);
 
     // Allocate memory for subfiles based on number of subfiles in the XML
     XmlNode *subfiles_node = root->children->next; // Should be "Subfiles" node
     if (!subfiles_node || strcmp(subfiles_node->tag, "Subfiles") != 0) {
+        printf("Error: missing or malformed subfiles node\n");
         return -3;  // Error: missing or malformed subfiles node
     }
+    printf("Found Subfiles node\n");
 
     // Allocate memory for the subfiles
-    struct IGGYSubFileEntry *subfiles = malloc(sizeof(struct IGGYSubFileEntry) * header.num_subfiles);
+    struct IGGYSubFileEntry *subfiles = gc_malloc(sizeof(struct IGGYSubFileEntry) * header.num_subfiles);
     if (!subfiles) {
+        printf("Memory allocation failed for subfiles\n");
         return -4;  // Memory allocation failed
     }
+    printf("Allocated memory for %u subfiles\n", header.num_subfiles);
 
     // Process each subfile node in the XML
     XmlNode *subfile_node = subfiles_node->children;
@@ -294,18 +319,21 @@ int gc_xmlDoIggy(const char *xml_data, const char *output_path) {
     while (subfile_node) {
         // Extract subfile ID
         unsigned int subfile_id = atoi(subfile_node->content);
+        printf("Extracted Subfile ID: %u\n", subfile_id);
 
         // Extract size and offset from the XML nodes
         XmlNode *size_node = subfile_node->children;
         unsigned int subfile_size = 0;
         if (size_node && strcmp(size_node->tag, "Size") == 0) {
             subfile_size = atoi(size_node->content);
+            printf("Extracted Subfile Size: %u\n", subfile_size);
         }
 
         XmlNode *offset_node = size_node->next;
         unsigned int subfile_offset = 0;
         if (offset_node && strcmp(offset_node->tag, "Offset") == 0) {
             subfile_offset = atoi(offset_node->content);
+            printf("Extracted Subfile Offset: %u\n", subfile_offset);
         }
 
         // Store the subfile entry
@@ -318,23 +346,29 @@ int gc_xmlDoIggy(const char *xml_data, const char *output_path) {
 
         subfile_node = subfile_node->next;
     }
+    printf("Processed %d subfiles\n", subfile_index);
 
     // After processing XML, write the reconstructed IGGY file
-    // Here, you would use your existing functionality to write the header and subfiles to a new IGGY file
+    printf("Writing reconstructed IGGY file to: %s\n", output_path);
     FILE *output_file = fopen(output_path, "wb");
     if (!output_file) {
         free(subfiles);
+        printf("Error opening output file: %s\n", output_path);
         return -5;  // Error opening output file
     }
 
     // Write the IGGY header
     fwrite(&header, sizeof(header), 1, output_file);
+    printf("Wrote IGGY header to file\n");
 
-    // Write the subfiles (this part depends on how the subfiles are written to the IGGY file)
+    // Write the subfiles
     fwrite(subfiles, sizeof(struct IGGYSubFileEntry), header.num_subfiles, output_file);
+    printf("Wrote %u subfiles to file\n", header.num_subfiles);
 
     // Clean up
     free(subfiles);
     fclose(output_file);
+    printf("Cleaned up and closed IGGY file\n");
+
     return 0; // Success
 }
