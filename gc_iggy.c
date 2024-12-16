@@ -1,20 +1,25 @@
-#include "iggy.h"
+#include "gc_iggy.h"
+#include "gc_memory.h"
 
-int parse_iggy(const char *filename, struct IGGYHeader header) {
+int gc_parse_iggy(const char *filename, struct IGGYHeader header)
+{
     FILE *file = fopen(filename, "rb");
-    if (!file) {
-        perror("Errore nell'apertura del file");
+    if (!file)
+    {
+        gc_MessageBox("File Opening Error", MB_ICONERROR);
         return -1;
     }
 
-    if (fread(&header, sizeof(header), 1, file) != 1) {
-        perror("Errore nella lettura dell'intestazione");
+    if (fread(&header, sizeof(header), 1, file) != 1)
+    {
+        gc_MessageBox("Header Read Error", MB_ICONERROR);
         fclose(file);
         return -1;
     }
 
     // Verifica la firma
-    if (header.signature != IGGY_SIGNATURE) {
+    if (header.signature != IGGY_SIGNATURE)
+    {
         fprintf(stderr, "Firma del file non valida\n");
         fclose(file);
         return -1;
@@ -22,17 +27,23 @@ int parse_iggy(const char *filename, struct IGGYHeader header) {
 
     // Stampa l'intestazione del file
     printf("Signature: 0x%" PRIx32 "\n", header.signature);
-    if (header.plattform[1] == 64) {
+    if (header.plattform[1] == 64)
+    {
         printf("Version: 64-bit\n");
-    } else if (header.plattform[1] == 32) {
+    }
+    else if (header.plattform[1] == 32)
+    {
         printf("Version: 32-bit\n");
-    } else {
+    }
+    else
+    {
         printf("Unknown Version: %" PRIu32 "\n", header.version);
     }
 
     // Stampa la piattaforma come esadecimale
     printf("Platform: ");
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         printf("%02X ", header.plattform[i]);
     }
     printf("\n");
@@ -42,22 +53,25 @@ int parse_iggy(const char *filename, struct IGGYHeader header) {
 
     // Leggi le voci dei sottotitoli
     size_t subfile_size = sizeof(struct IGGYSubFileEntry);
-    struct IGGYSubFileEntry *subfiles = malloc(header.num_subfiles * subfile_size);
-    if (!subfiles) {
-        perror("Errore nell'allocazione della memoria");
+    struct IGGYSubFileEntry *subfiles = gc_malloc(header.num_subfiles * subfile_size);
+    if (!subfiles)
+    {
+        gc_MessageBox("gc_malloc Error", MB_ICONERROR);
         fclose(file);
         return -1;
     }
 
-    if (fread(subfiles, subfile_size, header.num_subfiles, file) != header.num_subfiles) {
-        perror("Errore nella lettura delle voci dei sottotitoli");
-        free(subfiles);
+    if (fread(subfiles, subfile_size, header.num_subfiles, file) != header.num_subfiles)
+    {
+        gc_MessageBox("Subfile Read Error", MB_ICONERROR);
+        gc_free(subfiles);
         fclose(file);
         return -1;
     }
 
     // Stampa le voci dei sottotitoli
-    for (uint32_t i = 0; i < header.num_subfiles; i++) {
+    for (uint32_t i = 0; i < header.num_subfiles; i++)
+    {
         printf("Subfile %u:\n", i);
         printf("  ID: %" PRIu32 "\n", subfiles[i].id);
         printf("  Size: %" PRIu32 "\n", subfiles[i].size);
@@ -66,12 +80,14 @@ int parse_iggy(const char *filename, struct IGGYHeader header) {
     }
 
     // Gestisci i dati Flash in base alla versione
-    if (header.plattform[1] == 64) {
+    if (header.plattform[1] == 64)
+    {
         // Logica per 64 bit
         struct IGGYFlashHeader64 flash_header;
-        if (fread(&flash_header, sizeof(flash_header), 1, file) != 1) {
-            perror("Errore nella lettura dell'intestazione Flash (64-bit)");
-            free(subfiles);
+        if (fread(&flash_header, sizeof(flash_header), 1, file) != 1)
+        {
+            gc_MessageBox("Flash Header (64-bit) Read Error", MB_ICONERROR);
+            gc_free(subfiles);
             fclose(file);
             return -1;
         }
@@ -102,12 +118,15 @@ int parse_iggy(const char *filename, struct IGGYHeader header) {
         printf("Unknown 0xAC: %" PRIu32 "\n", flash_header.unk_AC);
         printf("Unknown 0xB0: %" PRIu32 "\n", flash_header.unk_B0);
         printf("Unknown 0xB4: %" PRIu32 "\n", flash_header.unk_B4);
-    } else if (header.plattform[1] == 32) {
+    }
+    else if (header.plattform[1] == 32)
+    {
         // Logica per 32 bit
         struct IGGYFlashHeader32 flash_header;
-        if (fread(&flash_header, sizeof(flash_header), 1, file) != 1) {
-            perror("Errore nella lettura dell'intestazione Flash (32-bit)");
-            free(subfiles);
+        if (fread(&flash_header, sizeof(flash_header), 1, file) != 1)
+        {
+            gc_MessageBox("Flash Header Read Error", MB_ICONERROR);
+            gc_free(subfiles);
             fclose(file);
             return -1;
         }
@@ -139,12 +158,13 @@ int parse_iggy(const char *filename, struct IGGYHeader header) {
         printf("Unknown 0x78: %" PRIu32 "\n", flash_header.unk_78);
         printf("Unknown 0x7C: %" PRIu32 "\n", flash_header.unk_7C);
     }
-    else{
+    else
+    {
         printf("ERROR - UNKNOWN VERSION, CAN'T PROCEED");
         return 1;
     }
     // Pulisci
-    free(subfiles);
+    gc_free(subfiles);
     fclose(file);
     return 0;
 }

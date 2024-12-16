@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "time.h"
+#include "Time.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -17,9 +17,6 @@
 
 #define DEFAULT_PORT 8080
 
-//Later on I'mma define my own Malloc()
-//This should be moved in something like buffer.h
-#define MAX_SIZE 2048
 
 // Struct to manage the server
 typedef struct {
@@ -33,7 +30,7 @@ typedef struct {
 } NetworkServer;
 
 // Functions for server management
-int network_init(NetworkServer *server, int port);
-int network_host(NetworkServer *server, const char* file_path);
-int send_file_content(NetworkServer *server, int client_socket, const char *file_path);
-void network_cleanup(NetworkServer *server);
+int gc_network_init(NetworkServer *server, int port);
+int gc_network_host(NetworkServer *server, const char* file_path);
+int gc_send_file_content(int client_socket, const char *file_path);
+void gc_network_cleanup(NetworkServer *server);

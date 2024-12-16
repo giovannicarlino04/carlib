@@ -2,7 +2,7 @@
 #define IGGY_H
 
 #include <stdint.h>
-#include <cstdio>
+#include <stdio.h>
 #include <inttypes.h>
 
 #define uint32 uint32_t
@@ -102,6 +102,6 @@ struct IGGYFlashHeader64
     uint32 unk_B4;               // 0xB4
 } ;
 
-int parse_iggy(const char *filename, struct IggyHeader Header);
+int gc_parse_iggy(const char *filename, struct IGGYHeader Header);
 
 #endif //IGGY_H

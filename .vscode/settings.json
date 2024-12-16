@@ -57,6 +57,17 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
-    "system_error": "c"
+    "system_error": "c",
+    "xml.h": "c",
+    "common.h": "c",
+    "time.h": "c",
+    "gc_debug.h": "c",
+    "gc_network.h": "c",
+    "gc_time.h": "c",
+    "gc_xml.h": "c",
+    "gc_memory.h": "c",
+    "memory.h": "c",
+    "gc_zip.h": "c",
+    "string.h": "c"
   }
 }

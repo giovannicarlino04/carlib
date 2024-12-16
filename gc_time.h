@@ -22,7 +22,7 @@ typedef struct Timer {
     clock_t start_time;
 } Timer;
 
-double getCurrentTime();
-double getElapsedTime(Timer* timer);
-void sleepFor(double seconds);
-void startTimer(Timer* timer);
+double gc_getCurrentTime();
+double gc_getElapsedTime(Timer* timer);
+void gc_sleepFor(double seconds);
+void gc_startTimer(Timer* timer);

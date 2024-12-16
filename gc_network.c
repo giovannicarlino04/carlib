@@ -1,12 +1,13 @@
-#include "network.h"
-#include "debug.h"
+#include "gc_network.h"
+#include "gc_debug.h"
+#include "gc_memory.h"
 
 // Cross-platform network initialization
-int network_init(NetworkServer *server, int port) {
+int gc_network_init(NetworkServer *server, int port) {
 #ifdef _WIN32
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        MBError("WSAStartup failed");
+        gc_MessageBox("WSAStartup failed", MB_ICONERROR);
         return -1;
     }
 #endif
@@ -14,8 +15,8 @@ int network_init(NetworkServer *server, int port) {
     server->port = port;
     server->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (server->server_socket == -1) {
-        MBError("socket() failed");
+    if (server->server_socket == (unsigned int)-1) {
+        gc_MessageBox("socket() failed", MB_ICONERROR);
 #ifdef _WIN32
         WSACleanup();
 #endif
@@ -27,14 +28,14 @@ int network_init(NetworkServer *server, int port) {
     server->server_addr.sin_port = htons(port);
 
     if (bind(server->server_socket, (struct sockaddr *)&server->server_addr, sizeof(server->server_addr)) == -1) {
-        MBError("bind() failed");
-        network_cleanup(server);
+        gc_MessageBox("bind() failed", MB_ICONERROR);
+        gc_network_cleanup(server);
         return -1;
     }
 
     if (listen(server->server_socket, 5) == -1) {
-        MBError("listen() failed");
-        network_cleanup(server);
+        gc_MessageBox("bind() failed", MB_ICONERROR);
+        gc_network_cleanup(server);
         return -1;
     }
 
@@ -42,10 +43,10 @@ int network_init(NetworkServer *server, int port) {
 }
 
 // Sending file content to the client
-int send_file_content(NetworkServer *server, int client_socket, const char *file_path) {
+int gc_send_file_content(int client_socket, const char *file_path) {
     FILE *file = fopen(file_path, "r");
     if (!file) {
-        MBError("Could not open file");
+        gc_MessageBox("Could not open file", MB_ICONERROR);
         return -1;
     }
 
@@ -64,7 +65,7 @@ int send_file_content(NetworkServer *server, int client_socket, const char *file
 }
 
 // Running the server to accept and handle connections
-int network_host(NetworkServer *server, const char* file_path) {
+int gc_network_host(NetworkServer *server, const char* file_path) {
     int client_socket;
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
@@ -79,8 +80,8 @@ int network_host(NetworkServer *server, const char* file_path) {
             printf("Received: %s\n", buffer);
 
             // Serve content from a file
-            if (send_file_content(server, client_socket, file_path) != 0) {
-                MBError("Failed to send file content");
+            if (gc_send_file_content(client_socket, file_path) != 0) {
+                 gc_MessageBox("Failed to send file content", MB_ICONERROR);
                 break;
             }
         }
@@ -95,7 +96,7 @@ int network_host(NetworkServer *server, const char* file_path) {
 }
 
 // Cleanup the server (close socket, etc.)
-void network_cleanup(NetworkServer *server) {
+void gc_network_cleanup(NetworkServer *server) {
 #ifdef _WIN32
     closesocket(server->server_socket);
     WSACleanup();
