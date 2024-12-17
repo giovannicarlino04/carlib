@@ -4,7 +4,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <errno.h>
-#include <windows.h>
+#include <math.h> 
 
 #define BILLION 1000000000L
 
@@ -26,8 +26,6 @@ typedef struct Timer {
     clock_t start_time;
 } Timer;
 
-DWORD gc_ns_to_ms(LONGLONG nsec);
-int gc_nanosleep(time_t sec, long nsec);
 double gc_getCurrentTime();
 double gc_getElapsedTime(Timer* timer);
 void gc_sleepFor(double seconds);

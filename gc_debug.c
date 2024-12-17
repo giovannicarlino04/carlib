@@ -6,7 +6,7 @@ void gc_MessageBox(const char* message, int type) {
     MessageBoxA(NULL, message, "Error", type);
 }
 #else
-void gc_MessageBox(const char* message, int type) {
+void gc_MessageBox(const char* message,  int type) {
     printf(message);
 }
 #endif
