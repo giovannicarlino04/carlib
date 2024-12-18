@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <windows.h>
 
 // Set to 1 to enable optional debug messages
 // In memory.c & others

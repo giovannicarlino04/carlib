@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "gc_memory.h"
-#include "gc_xml.h"
 
 #define uint32 uint32_t
 #define uint64 uint64_t
