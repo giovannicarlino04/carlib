@@ -1,6 +1,7 @@
 
 #include "gc_iggy.h"
 #include "gc_common.h"
+#include <dirent.h>
 
 struct IGGYHeader gc_parse_iggy(const char *filename)
 {
@@ -184,4 +185,136 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
 
     fclose(file);
     return 0;  // Success
+}
+
+// Analizes multiple iggy files in a folder
+void gc_analyze_iggy_folder(const char *folder_path)
+{
+    DIR *dir = opendir(folder_path);
+    if (!dir)
+    {
+        perror("Unable to open directory");
+        return;
+    }
+
+    FILE *output_file = fopen("analysis.txt", "w");
+    if (!output_file)
+    {
+        perror("Unable to create analysis file");
+        closedir(dir);
+        return;
+    }
+
+    fprintf(output_file, "IGGY File Analysis\n\n");
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        // Check if the file has a .iggy extension
+        const char *file_name = entry->d_name;
+        const char *ext = strrchr(file_name, '.');
+        if (ext && strcmp(ext, ".iggy") == 0)
+        {
+            char full_path[512];
+            snprintf(full_path, sizeof(full_path), "%s/%s", folder_path, file_name);
+
+            // Parse the IGGY file
+            fprintf(output_file, "Analyzing file: %s\n", full_path);
+            struct IGGYHeader header = gc_parse_iggy(full_path);
+
+            // Write header details to the output file
+            fprintf(output_file, "Signature: 0x%X\n", header.signature);
+            fprintf(output_file, "Number of Subfiles: %u\n", header.num_subfiles);
+
+            // Allocate memory for subfile entries
+            size_t subfile_size = sizeof(struct IGGYSubFileEntry);
+            struct IGGYSubFileEntry *subfiles = gc_malloc(header.num_subfiles * subfile_size);
+            if (!subfiles)
+            {
+                fprintf(output_file, "Memory allocation error for subfiles\n");
+                continue;
+            }
+
+            if (gc_parse_iggy_subfiles(full_path, subfiles, header.num_subfiles) != 0)
+            {
+                fprintf(output_file, "Error reading subfile entries\n");
+                gc_free(subfiles);
+                continue;
+            }
+
+            // Analyze each subfile
+            for (unsigned int i = 0; i < header.num_subfiles; i++)
+            {
+                fprintf(output_file, "  Subfile %u:\n", i);
+                fprintf(output_file, "    ID: %u\n", subfiles[i].id);
+                fprintf(output_file, "    Size: %u\n", subfiles[i].size);
+                fprintf(output_file, "    Size2: %u\n", subfiles[i].size2);
+                fprintf(output_file, "    Offset: %u\n", subfiles[i].offset);
+            }
+
+            gc_free(subfiles);
+
+            // Additional analysis for Flash headers
+            if (header.plattform[1] == 64)
+            {
+                struct IGGYFlashHeader64 flash_header;
+                FILE *file = fopen(full_path, "rb");
+                if (!file || fseek(file, sizeof(header) + header.num_subfiles * subfile_size, SEEK_SET) != 0 || fread(&flash_header, sizeof(flash_header), 1, file) != 1)
+                {
+                    fprintf(output_file, "Error reading 64-bit Flash header\n");
+                    if (file) fclose(file);
+                    continue;
+                }
+                fclose(file);
+
+                fprintf(output_file, "  64-bit Flash Header:\n");
+                fprintf(output_file, "    Main Offset: %llu\n", flash_header.main_offset);
+                fprintf(output_file, "    AS3 Section Offset: %llu\n", flash_header.as3_section_offset);
+                fprintf(output_file, "    Framerate: %f\n", flash_header.framerate);
+                fprintf(output_file, "    Width: %u\n", flash_header.width);
+                fprintf(output_file, "    Height: %u\n", flash_header.height);
+            }
+            else if (header.plattform[1] == 32)
+            {
+                struct IGGYFlashHeader32 flash_header;
+                FILE *file = fopen(full_path, "rb");
+                if (!file || fseek(file, sizeof(header) + header.num_subfiles * subfile_size, SEEK_SET) != 0 || fread(&flash_header, sizeof(flash_header), 1, file) != 1)
+                {
+                    fprintf(output_file, "Error reading 32-bit Flash header\n");
+                    if (file) fclose(file);
+                    continue;
+                }
+                fclose(file);
+
+                fprintf(output_file, "  32-bit Flash Header:\n");
+                fprintf(output_file, "    Main Offset: %u\n", flash_header.main_offset);
+                fprintf(output_file, "    AS3 Section Offset: %u\n", flash_header.as3_section_offset);
+                fprintf(output_file, "    Framerate: %f\n", flash_header.framerate);
+                fprintf(output_file, "    Width: %u\n", flash_header.width);
+                fprintf(output_file, "    Height: %u\n", flash_header.height);
+            }
+            else
+            {
+                fprintf(output_file, "  Unknown platform version\n");
+            }
+
+            fprintf(output_file, "------------------------------------------\n\n");
+        }
+    }
+
+    fclose(output_file);
+    closedir(dir);
+    printf("Analysis complete. Results written to analysis.txt\n");
+}
+
+// Verifica se il file ha estensione ".iggy"
+int gc_isIggyFile(const char *filepath) {
+    const char *extension = strrchr(filepath, '.'); // Trova l'ultima occorrenza di '.'
+
+    if (extension != NULL) {
+        // Confronta l'estensione ignorando la distinzione tra maiuscole e minuscole
+        return strcmp(extension, ".iggy") == 0; 
+    }
+
+    return 0; // Nessuna estensione trovata, non è un file .iggy
 }

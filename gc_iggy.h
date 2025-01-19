@@ -105,5 +105,7 @@ struct IGGYFlashHeader64
 int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfiles, unsigned int num_subfiles);
 struct IGGYHeader gc_parse_iggy(const char *filename);
 int ends_with(const char *str, const char *suffix);
+void gc_analyze_iggy_folder(const char *folder_path);
+int gc_isIggyFile(const char *filepath);
 
 #endif //IGGY_H
