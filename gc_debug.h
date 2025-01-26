@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -13,7 +14,11 @@
 #ifdef _WIN32
 void gc_MessageBox(const char* message, int type);
 #else
+
 #define MB_ICONERROR 0x00000010L
+#define MB_ICONWARNING 0x00000030L
+#define MB_ICONINFORMATION 0x00000040L
+
 void gc_MessageBox(const char* message,  int type);  //type unused
 #endif
 

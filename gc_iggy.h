@@ -5,10 +5,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "gc_memory.h"
-
-#define uint32 uint32_t
-#define uint64 uint64_t
-#define uchar unsigned char
+#include "gc_common.h"
 
 // Define signature for IggyFile
 #define IGGY_SIGNATURE  0xED0A6749
