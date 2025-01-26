@@ -1,7 +1,10 @@
 #pragma once
 
 #include <stdio.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#endif 
 
 // Set to 1 to enable optional debug messages
 // In memory.c & others
