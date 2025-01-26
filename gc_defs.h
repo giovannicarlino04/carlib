@@ -29,4 +29,9 @@ typedef unsigned long gc_size;   // For size values (platform-dependent)
 #define GC_MIN(a, b) ((a) < (b) ? (a) : (b))                                // Minimum of two values
 #define GC_MAX(a, b) ((a) > (b) ? (a) : (b))                                // Maximum of two values
 
+#define uint16 uint16_t
+#define uint32 uint32_t
+#define uint64 uint64_t
+#define uchar unsigned char
+
 #endif // GC_DEFS_H
