@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include "gc_memory.h"
 #include "gc_common.h"
+#include "gc_file.h"
 
 // Define signature for IggyFile
 #define IGGY_SIGNATURE  0xED0A6749
@@ -103,6 +104,6 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
 struct IGGYHeader gc_parse_iggy(const char *filename);
 int ends_with(const char *str, const char *suffix);
 void gc_analyze_iggy_folder(const char *folder_path);
-int gc_isIggyFile(const char *filepath);
+bool gc_isIggyFile(const char *filepath);
 
 #endif //IGGY_H

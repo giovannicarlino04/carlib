@@ -308,13 +308,7 @@ void gc_analyze_iggy_folder(const char *folder_path)
 }
 
 // Verifica se il file ha estensione ".iggy"
-int gc_isIggyFile(const char *filepath) {
-    const char *extension = strrchr(filepath, '.'); // Trova l'ultima occorrenza di '.'
+bool gc_isIggyFile(const char *filepath) {
 
-    if (extension != NULL) {
-        // Confronta l'estensione ignorando la distinzione tra maiuscole e minuscole
-        return strcmp(extension, ".iggy") == 0; 
-    }
-
-    return 0; // Nessuna estensione trovata, non è un file .iggy
+    return gc_file_check_extension(filepath, ".iggy"); // Nessuna estensione trovata, non è un file .iggy
 }
