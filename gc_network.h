@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "Time.h"
+#include <time.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
