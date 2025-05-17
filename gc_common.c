@@ -21,6 +21,7 @@ size_t gc_strnlen(const char *str, size_t max_len) {
     }
     return len;
 }
+ 
 int ends_with(const char *str, const char *suffix) {
     size_t str_len = strlen(str);
     size_t suffix_len = strlen(suffix);
@@ -29,6 +30,7 @@ int ends_with(const char *str, const char *suffix) {
     }
     return strcmp(str + str_len - suffix_len, suffix) == 0;
 }
+
 void get_filename_without_extension(const char *file_path, char *out_name) {
     const char *dot = strrchr(file_path, '.');
     size_t len = dot ? (size_t)(dot - file_path) : strlen(file_path);
