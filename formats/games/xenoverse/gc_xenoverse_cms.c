@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 #include "gc_xenoverse_cms.h"
-#include "../../../gc_memory.h"
-#include "../../../gc_string.h"
+#include "gc_memory.h"
+#include "gc_string.h"
 
 // Function to load a CMS file.
 void gc_CMSLoad(CMS* cms, const char* path) {

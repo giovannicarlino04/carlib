@@ -1,5 +1,5 @@
 #include "gc_wav.h"
-#include "../../gc_common.h" // for read like functions
+#include "gc_common.h" // for read like functions
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

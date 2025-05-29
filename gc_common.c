@@ -1,21 +1,13 @@
-#ifndef GC_COMMON_H
-#define GC_COMMON_H
+#include "gc_common.h"
 
-#include <stdint.h>
-#include <stdio.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-    
-    // Read little-endian unsigned 32-bit integer from file, returns 0 on failure
-    uint32_t gc_read_u32_le(FILE *f);
-    
-    // Read little-endian unsigned 16-bit integer from file, returns 0 on failure
-    uint16_t gc_read_u16_le(FILE *f);
-    
-#ifdef __cplusplus
+uint32_t gc_read_u32_le(FILE *f) {
+    uint8_t b[4];
+    if (fread(b, 1, 4, f) != 4) return 0;
+    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
 }
-#endif
 
-#endif // GC_COMMON_H
+uint16_t gc_read_u16_le(FILE *f) {
+    uint8_t b[2];
+    if (fread(b, 1, 2, f) != 2) return 0;
+    return (uint16_t)b[0] | ((uint16_t)b[1] << 8);
+}
