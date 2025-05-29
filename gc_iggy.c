@@ -1,6 +1,6 @@
 
 #include "gc_iggy.h"
-#include "gc_common.h"
+#include "gc_string.h"
 #include <dirent.h>
 
 struct IGGYHeader gc_parse_iggy(const char *filename)

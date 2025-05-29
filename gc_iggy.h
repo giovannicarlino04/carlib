@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "gc_memory.h"
-#include "gc_common.h"
+#include "gc_string.h"
 #include "gc_file.h"
 
 // Define signature for IggyFile
