@@ -1,5 +1,6 @@
 #include "gc_wav.h"
 #include "gc_common.h" // for read like functions
+#include "gc_memory.h" // for gc_malloc
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,7 +90,7 @@ gc_wav_t* gc_wav_open(const char *filename, gc_wav_error_t *err) {
             found_fmt = 1;
         } else if (strncmp(chunk_id, "data", 4) == 0) {
             wav->data_size = chunk_size;
-            wav->data = (uint8_t*)malloc(chunk_size);
+            wav->data = (uint8_t*)gc_malloc(chunk_size);
             if (!wav->data) {
                 free(wav);
                 fclose(f);

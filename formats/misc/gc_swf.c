@@ -1,5 +1,6 @@
 #include "gc_swf.h"
 #include "gc_common.h"
+#include "gc_memory.h"
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
@@ -74,7 +75,7 @@ int gc_swf_read_next_tag(gc_swf_context_t *ctx, gc_swf_tag_t *tag) {
     }
 
     tag->tag_length = length;
-    tag->tag_data = (uint8_t *)malloc(length);
+    tag->tag_data = (uint8_t *)gc_malloc(length);
     if (!tag->tag_data) return 0;
 
     fread(tag->tag_data, 1, length, ctx->file);

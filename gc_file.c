@@ -1,4 +1,5 @@
 #include "gc_file.h"
+#include "gc_memory.h"
 
 long gc_file_size(FILE *f) {
     if (!f) return -1;
@@ -47,7 +48,7 @@ unsigned char* gc_read_file(const char *path, size_t *out_size) {
     }
     rewind(f);
 
-    unsigned char *buffer = (unsigned char*)malloc(size);
+    unsigned char *buffer = (unsigned char*)gc_malloc(size);
     if (!buffer) {
         fclose(f);
         return NULL;
