@@ -2,6 +2,26 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// Helper for escaping strings
+static void gc_json_escape_string(const char* str, FILE* out) {
+    fputc('"', out);
+    for (const char* p = str; *p; ++p) {
+        switch (*p) {
+            case '\\': fputs("\\\\", out); break;
+            case '"':  fputs("\\\"", out); break;
+            case '\n': fputs("\\n", out); break;
+            case '\r': fputs("\\r", out); break;
+            case '\t': fputs("\\t", out); break;
+            default:
+            if ((unsigned char)*p < 32)
+                fprintf(out, "\\u%04x", *p);
+            else
+                fputc(*p, out);
+        }
+    }
+    fputc('"', out);
+}
+
 // Function to read a null-terminated string at a specific address.
 char* gc_CMSReadString(FILE* file, int32_t address) {
     if (address == 0) {

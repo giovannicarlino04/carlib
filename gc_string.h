@@ -11,5 +11,6 @@ char *gc_strndup(const char *str, size_t n);
 char *gc_strlen(const char *str, size_t n);
 int ends_with(const char *str, const char *suffix);
 void get_filename_without_extension(const char *file_path, char *out_name);
+static void gc_json_escape_string(const char* str, FILE* out);
 
 #endif //GC_STRING_H
