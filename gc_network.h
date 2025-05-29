@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GC_NETWORK_H
+#define GC_NETWORK_H
 
 #include <stdio.h>
 #include <string.h>
@@ -34,3 +35,4 @@ int gc_network_init(NetworkServer *server, int port);
 int gc_network_host(NetworkServer *server, const char* file_path);
 int gc_send_file_content(int client_socket, const char *file_path);
 void gc_network_cleanup(NetworkServer *server);
+#endif // GC_NETWORK_H

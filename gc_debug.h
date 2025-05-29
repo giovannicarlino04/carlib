@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GC_DEBUG_H
+#define GC_DEBUG_H
 
 #include <stdio.h>
 #include <string.h>
@@ -24,3 +25,4 @@ void gc_MessageBox(const char* message,  int type);  //type unused
 
 // For now let's provide an alternative
 // Just to get some sort of error to the console in Unix
+#endif // GC_DEBUG_H

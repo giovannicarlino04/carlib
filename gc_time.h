@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GC_TIME_H
+#define GC_TIME_H
 
 #include <stdio.h>
 #include <time.h>
@@ -30,3 +31,5 @@ double gc_getCurrentTime();
 double gc_getElapsedTime(Timer* timer);
 void gc_sleepFor(double seconds);
 void gc_startTimer(Timer* timer);
+
+#endif // GC_TIME_H
