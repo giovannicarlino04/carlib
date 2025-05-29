@@ -26,6 +26,58 @@ int gc_file_check_extension(const char *filepath, const char *extension) {
     return 0; // Nessuna estensione trovata, non è un file .{Estensione}
 }
 
+// Reads entire file into a malloc'd buffer.
+// On success, returns pointer to buffer, sets *out_size to file size.
+// On failure, returns NULL, *out_size is 0.
+// Caller must free() returned buffer.
+unsigned char* gc_read_file(const char *path, size_t *out_size) {
+    if (out_size) *out_size = 0;
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+
+    if (fseek(f, 0, SEEK_END) != 0) {
+        fclose(f);
+        return NULL;
+    }
+
+    long size = ftell(f);
+    if (size < 0) {
+        fclose(f);
+        return NULL;
+    }
+    rewind(f);
+
+    unsigned char *buffer = (unsigned char*)malloc(size);
+    if (!buffer) {
+        fclose(f);
+        return NULL;
+    }
+
+    size_t read_bytes = fread(buffer, 1, size, f);
+    fclose(f);
+
+    if (read_bytes != (size_t)size) {
+        free(buffer);
+        return NULL;
+    }
+
+    if (out_size) *out_size = size;
+    return buffer;
+}
+
+//(caller responsibility to handle)
+void gc_read_file_lines(const char *path) {
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+
+    char line[1024];
+    while (fgets(line, sizeof(line), f)) {
+        printf("Line: %s", line);
+    }
+
+    fclose(f);
+}
+
 int gc_copy_file(const char *src_path, const char *dest_path) {
     FILE *src = fopen(src_path, "rb");
     if (!src) {
