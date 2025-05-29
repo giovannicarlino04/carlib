@@ -60,7 +60,33 @@ BYTE* gc_aobscan(const char* pattern_str, BYTE* start, SIZE_T size) {
     
     return NULL;
 }
-
+BYTE* gc_aobscan_external(const char* pattern_str, BYTE* start, SIZE_T size, HANDLE process) {
+    BYTE pattern[256];
+    char mask[256];
+    SIZE_T pattern_len = 0;
+    
+    gc_parse_pattern(pattern_str, pattern, mask, &pattern_len);
+    if (pattern_len == 0) return NULL;
+    
+    BYTE* buffer = (BYTE*)malloc(size);
+    if (!buffer) return NULL;
+    
+    SIZE_T bytesRead;
+    if (!ReadProcessMemory(process, start, buffer, size, &bytesRead) || bytesRead < size) {
+        free(buffer);
+        return NULL;
+    }
+    
+    for (SIZE_T i = 0; i <= bytesRead - pattern_len; i++) {
+        if (gc_pattern_match(buffer + i, pattern, mask, pattern_len)) {
+            free(buffer);
+            return start + i;
+        }
+    }
+    
+    free(buffer);
+    return NULL;
+}
 BOOL gc_patch_bytes(BYTE* address, const BYTE* bytes, SIZE_T len, GC_Patch* out_patch) {
     DWORD oldProtect;
     if (!gc_unprotect_memory(address, len, &oldProtect)) return FALSE;

@@ -17,6 +17,14 @@ typedef struct {
 BYTE* gc_aobscan(const char* pattern, BYTE* start, SIZE_T size);
 
 /**
+ * Scans memory in a specified process for a given pattern.
+ * Use '?' or '??' in the pattern to specify wildcards.
+ * Example: "48 8B ?? ?? ?? 89"
+ */
+BYTE* gc_aobscan_external(const char* pattern, BYTE* start, SIZE_T size, HANDLE process);
+
+
+/**
  * Overwrites memory at a specific address.
  */
 BOOL gc_patch_bytes(BYTE* address, const BYTE* bytes, SIZE_T len, GC_Patch* out_patch);
