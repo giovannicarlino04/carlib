@@ -1,8 +1,8 @@
 #ifndef GC_XENOVERSE_CMS_H
 #define GC_XENOVERSE_CMS_H
 
-#include <stdint.h>
-#include <stdio.h>
+#include "gc_defs.h"
+#include <Windows.h>
 
 #define SHORT_NAME_LENGTH 4
 #define MAX_PATHS 7
@@ -21,7 +21,7 @@ typedef struct {
 } CMS;
 
 // Function prototypes
-char* gc_CMSReadString(FILE* file, int32_t address);
+static char* gc_CMSReadString(HANDLE hFile, int32_t address);
 void gc_CMSLoad(CMS* cms, const char* path);
 void gc_CMSSave(const CMS* cms);
 void gc_FreeCMS(CMS* cms);

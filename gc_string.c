@@ -1,49 +1,38 @@
 #include "gc_string.h"
-#include <stdint.h>
-#include <stdio.h>
 
-// Helper for escaping strings
-static void gc_json_escape_string(const char* str, FILE* out) {
-    fputc('"', out);
-    for (const char* p = str; *p; ++p) {
+static void gc_json_escape_string(const char* str, HANDLE out) {
+    const char* p = str;
+    DWORD written;
+    char c;
+    
+    c = '"';
+    WriteFile(out, &c, 1, &written, NULL);
+
+    while (*p) {
         switch (*p) {
-            case '\\': fputs("\\\\", out); break;
-            case '"':  fputs("\\\"", out); break;
-            case '\n': fputs("\\n", out); break;
-            case '\r': fputs("\\r", out); break;
-            case '\t': fputs("\\t", out); break;
+            case '\"': WriteFile(out, "\\\"", 2, &written, NULL); break;
+            case '\\': WriteFile(out, "\\\\", 2, &written, NULL); break;
+            case '\b': WriteFile(out, "\\b", 2, &written, NULL); break;
+            case '\f': WriteFile(out, "\\f", 2, &written, NULL); break;
+            case '\n': WriteFile(out, "\\n", 2, &written, NULL); break;
+            case '\r': WriteFile(out, "\\r", 2, &written, NULL); break;
+            case '\t': WriteFile(out, "\\t", 2, &written, NULL); break;
             default:
-            if ((unsigned char)*p < 32)
-                fprintf(out, "\\u%04x", *p);
-            else
-                fputc(*p, out);
+                if ((unsigned char)*p < 0x20) {
+                    // Control characters as \u00XX
+                    char buf[7];
+                    wsprintfA(buf, "\\u%04X", (unsigned char)*p);
+                    WriteFile(out, buf, 6, &written, NULL);
+                } else {
+                    WriteFile(out, p, 1, &written, NULL);
+                }
+                break;
         }
+        p++;
     }
-    fputc('"', out);
-}
 
-// Function to read a null-terminated string at a specific address.
-char* gc_CMSReadString(FILE* file, int32_t address) {
-    if (address == 0) {
-        return NULL;
-    }
-    
-    long currentPosition = ftell(file);
-    fseek(file, address, SEEK_SET);
-    
-    char buffer[256];
-    size_t i = 0;
-    while (i < sizeof(buffer) - 1) {
-        char c;
-        if (fread(&c, 1, 1, file) != 1 || c == '\0') {
-            break;
-        }
-        buffer[i++] = c;
-    }
-    buffer[i] = '\0';
-    
-    fseek(file, currentPosition, SEEK_SET);
-    return strdup(buffer);
+    c = '"';
+    WriteFile(out, &c, 1, &written, NULL);
 }
 
 char* gc_strndup(const char *str, size_t n) {

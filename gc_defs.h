@@ -28,10 +28,20 @@ typedef unsigned long gc_size;   // For size values (platform-dependent)
 #define GC_ALIGN(size) (((size) + (GC_ALIGNMENT - 1)) & ~(GC_ALIGNMENT - 1)) // Align size to GC_ALIGNMENT
 #define GC_MIN(a, b) ((a) < (b) ? (a) : (b))                                // Minimum of two values
 #define GC_MAX(a, b) ((a) > (b) ? (a) : (b))                                // Maximum of two values
+#define GC_HEAP GetProcessHeap()
 
+#define uchar unsigned char
+#define int8_t signed char
+#define int16_t signed short
+#define int32_t signed int
+#define int64_t signed long long
+#define uint64_t unsigned long long
+#define uint32_t unsigned int
+#define uint16_t unsigned short
+#define uint8_t unsigned char
 #define uint16 uint16_t
 #define uint32 uint32_t
 #define uint64 uint64_t
-#define uchar unsigned char
+typedef unsigned int size_t;
 
 #endif // GC_DEFS_H

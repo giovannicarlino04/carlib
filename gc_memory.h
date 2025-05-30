@@ -1,9 +1,6 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include <stddef.h> 
-#include <stdint.h>  // For uintptr_t
-#include <stddef.h>  // For NULL
 #include "gc_debug.h"
 #include "gc_defs.h"
 

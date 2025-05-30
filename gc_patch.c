@@ -1,6 +1,4 @@
 #include "gc_patch.h"
-#include <string.h>
-#include <stdio.h>
 
 static BOOL gc_unprotect_memory(BYTE* address, SIZE_T len, DWORD* oldProtect) {
     return VirtualProtect(address, len, PAGE_EXECUTE_READWRITE, oldProtect);

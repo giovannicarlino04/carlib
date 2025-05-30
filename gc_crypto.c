@@ -1,8 +1,4 @@
 #include "gc_crypto.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 
 #if defined(_WIN32)
 #include <windows.h>

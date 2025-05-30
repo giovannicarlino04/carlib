@@ -1,8 +1,8 @@
 #ifndef GC_SWF_H
 #define GC_SWF_H
 
-#include <stdint.h>
-#include <stdio.h>
+#include "gc_defs.h"
+#include <Windows.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,7 @@ typedef struct {
 } gc_swf_tag_t;
 
 typedef struct {
-    FILE *file;
+    HANDLE *file;
     gc_swf_header_t header;
     uint32_t current_offset;
     int compressed_stream_start;

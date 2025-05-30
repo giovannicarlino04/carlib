@@ -1,8 +1,7 @@
 #ifndef GC_CRYPTO_H
 #define GC_CRYPTO_H
 
-#include <stdint.h>
-#include <stddef.h>
+#include "gc_common.h"
 
 #ifdef __cplusplus
 extern "C" {

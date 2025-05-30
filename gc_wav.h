@@ -1,7 +1,7 @@
 #ifndef GC_WAV_H
 #define GC_WAV_H
 
-#include <stdint.h>
+#include "gc_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

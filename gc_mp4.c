@@ -8,8 +8,6 @@
 #include <shlwapi.h>
 #include <strmif.h>
 #include <initguid.h>
-#include <stdlib.h>
-#include <string.h>
 
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")

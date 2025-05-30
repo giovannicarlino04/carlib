@@ -42,25 +42,41 @@ int gc_network_init(NetworkServer *server, int port) {
     return 0;
 }
 
-// Sending file content to the client
-int gc_send_file_content(int client_socket, const char *file_path) {
-    FILE *file = fopen(file_path, "r");
-    if (!file) {
+int gc_send_file_content(SOCKET client_socket, const char *file_path) {
+    HANDLE file = CreateFileA(
+        file_path,
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (file == INVALID_HANDLE_VALUE) {
         gc_MessageBox("Could not open file", MB_ICONERROR);
         return -1;
     }
 
-    char response_header[] = "HTTP/1.1 200 OK\r\n"
-                             "Content-Type: text/html; charset=UTF-8\r\n\r\n";
-    send(client_socket, response_header, strlen(response_header), 0);
+    const char response_header[] =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html; charset=UTF-8\r\n\r\n";
+
+    send(client_socket, response_header, (int)strlen(response_header), 0);
 
     char buffer[MAX_SIZE];
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, MAX_SIZE, file)) > 0) {
-        send(client_socket, buffer, bytes_read, 0);
-    }
+    DWORD bytes_read;
+    BOOL result;
 
-    fclose(file);
+    do {
+        result = ReadFile(file, buffer, MAX_SIZE, &bytes_read, NULL);
+        if (!result || bytes_read == 0)
+            break;
+
+        send(client_socket, buffer, bytes_read, 0);
+    } while (bytes_read > 0);
+
+    CloseHandle(file);
     return 0;
 }
 
@@ -77,7 +93,6 @@ int gc_network_host(NetworkServer *server, const char* file_path) {
         int bytes_received = recv(client_socket, buffer, MAX_SIZE, 0);
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';  // Null-terminate the received data
-            printf("Received: %s\n", buffer);
 
             // Serve content from a file
             if (gc_send_file_content(client_socket, file_path) != 0) {

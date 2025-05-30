@@ -1,9 +1,6 @@
 #ifndef GC_DEBUG_H
 #define GC_DEBUG_H
 
-#include <stdio.h>
-#include <string.h>
-
 #ifdef _WIN32
 #include <windows.h>
 #endif 

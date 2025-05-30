@@ -1,19 +1,34 @@
 #include "gc_time.h"
-#include <math.h> 
 
-// Function to get the elapsed time (in seconds) since start_time
+static LARGE_INTEGER frequency;
+
+// Initialize performance frequency only once
+static void init_frequency() {
+    if (frequency.QuadPart == 0) {
+        QueryPerformanceFrequency(&frequency);
+    }
+}
+
+double gc_getCurrentTime(void) {
+    init_frequency();
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    return (double)now.QuadPart / frequency.QuadPart;
+}
+
+void gc_startTimer(Timer* timer) {
+    init_frequency();
+    QueryPerformanceCounter(&timer->start_time);
+}
+
 double gc_getElapsedTime(Timer* timer) {
-    return ((double)(clock() - timer->start_time)) / CLOCKS_PER_SEC;
+    init_frequency();
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    return (double)(now.QuadPart - timer->start_time.QuadPart) / frequency.QuadPart;
 }
 
 void gc_sleepFor(double seconds) {
-    struct timespec ts;
-    ts.tv_sec = (time_t)floor(seconds);  // Integer part (seconds)
-    ts.tv_nsec = (long)((seconds - ts.tv_sec) * 1000000000L);  // Fractional part (nanoseconds)
-    nanosleep(&ts, NULL);
-}
-
-// Function to create and initialize a timer
-void gc_startTimer(Timer* timer) {
-    timer->start_time = clock();
+    DWORD ms = (DWORD)(seconds * 1000.0);
+    Sleep(ms);
 }

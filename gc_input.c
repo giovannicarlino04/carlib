@@ -3,11 +3,11 @@
 // Maximum virtual-key code (256 is enough for Windows VK codes)
 #define GC_KEY_COUNT 256
 
-static bool keys_down[GC_KEY_COUNT];
-static bool keys_prev[GC_KEY_COUNT];
+static int keys_down[GC_KEY_COUNT];
+static int keys_prev[GC_KEY_COUNT];
 
-static bool mouse_down[3];      // Left=0, Right=1, Middle=2
-static bool mouse_prev[3];
+static int mouse_down[3];      // Left=0, Right=1, Middle=2
+static int mouse_prev[3];
 static POINT mouse_pos = {0,0};
 
 // Map mouse button VK codes to array indices
@@ -45,18 +45,18 @@ void gc_input_update() {
     mouse_down[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
 }
 
-bool gc_key_down(int vkey) {
-    if (vkey < 0 || vkey >= GC_KEY_COUNT) return false;
+int gc_key_down(int vkey) {
+    if (vkey < 0 || vkey >= GC_KEY_COUNT) return 0;
     return keys_down[vkey];
 }
 
-bool gc_key_pressed(int vkey) {
-    if (vkey < 0 || vkey >= GC_KEY_COUNT) return false;
+int gc_key_pressed(int vkey) {
+    if (vkey < 0 || vkey >= GC_KEY_COUNT) return 0;
     return keys_down[vkey] && !keys_prev[vkey];
 }
 
-bool gc_key_released(int vkey) {
-    if (vkey < 0 || vkey >= GC_KEY_COUNT) return false;
+int gc_key_released(int vkey) {
+    if (vkey < 0 || vkey >= GC_KEY_COUNT) return 0;
     return !keys_down[vkey] && keys_prev[vkey];
 }
 
@@ -64,18 +64,18 @@ POINT gc_get_mouse_pos() {
     return mouse_pos;
 }
 
-bool gc_mouse_down(int button) {
-    if (button < 0 || button >= 3) return false;
+int gc_mouse_down(int button) {
+    if (button < 0 || button >= 3) return 0;
     return mouse_down[button];
 }
 
-bool gc_mouse_pressed(int button) {
-    if (button < 0 || button >= 3) return false;
+int gc_mouse_pressed(int button) {
+    if (button < 0 || button >= 3) return 0;
     return mouse_down[button] && !mouse_prev[button];
 }
 
-bool gc_mouse_released(int button) {
-    if (button < 0 || button >= 3) return false;
+int gc_mouse_released(int button) {
+    if (button < 0 || button >= 3) return 0;
     return !mouse_down[button] && mouse_prev[button];
 }
 
@@ -89,22 +89,22 @@ LRESULT gc_input_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             break;
         }
         case WM_LBUTTONDOWN:
-            mouse_down[0] = true;
+            mouse_down[0] = 1;
             break;
         case WM_LBUTTONUP:
-            mouse_down[0] = false;
+            mouse_down[0] = 0;
             break;
         case WM_RBUTTONDOWN:
-            mouse_down[1] = true;
+            mouse_down[1] = 1;
             break;
         case WM_RBUTTONUP:
-            mouse_down[1] = false;
+            mouse_down[1] = 0;
             break;
         case WM_MBUTTONDOWN:
-            mouse_down[2] = true;
+            mouse_down[2] = 1;
             break;
         case WM_MBUTTONUP:
-            mouse_down[2] = false;
+            mouse_down[2] = 0;
             break;
     }
     return 0;

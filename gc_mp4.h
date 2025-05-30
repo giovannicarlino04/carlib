@@ -1,6 +1,6 @@
 #ifndef GC_MP4_H
 #define GC_MP4_H
-#include <stdint.h>
+#include "gc_defs.h"
 
 typedef struct gc_mp4 gc_mp4;
 

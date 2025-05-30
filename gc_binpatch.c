@@ -1,8 +1,5 @@
 #include "gc_binpatch.h"
 #include "gc_memory.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static void parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SIZE_T* out_len) {
     SIZE_T i = 0;
