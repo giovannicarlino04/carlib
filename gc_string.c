@@ -71,3 +71,55 @@ void get_filename_without_extension(const char *file_path, char *out_name) {
     strncpy(out_name, file_path, len);
     out_name[len] = '\0';
 }
+//TODO: Implement a more robust version that handles floating point numbers, padding, etc.
+void gc_snprintf(char *buffer, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    char *out = buffer;
+    const char *f = format;
+    while (*f) {
+        if (*f == '%') {
+            f++;
+            if (*f == 's') {
+                const char *s = va_arg(args, const char*);
+                while (s && *s) *out++ = *s++;
+            } else if (*f == 'd') {
+                int val = va_arg(args, int);
+                char tmp[16], *p = tmp + 15;
+                int neg = val < 0;
+                if (neg) val = -val;
+                *p = '\0';
+                do { *--p = '0' + (val % 10); val /= 10; } while (val);
+                if (neg) *--p = '-';
+                while (*p) *out++ = *p++;
+            } else if (*f == 'u') {
+                unsigned int val = va_arg(args, unsigned int);
+                char tmp[16], *p = tmp + 15;
+                *p = '\0';
+                do { *--p = '0' + (val % 10); val /= 10; } while (val);
+                while (*p) *out++ = *p++;
+            } else if (*f == 'x') {
+                unsigned int val = va_arg(args, unsigned int);
+                char tmp[16], *p = tmp + 15;
+                *p = '\0';
+                do {
+                    int digit = val % 16;
+                    *--p = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
+                    val /= 16;
+                } while (val);
+                while (*p) *out++ = *p++;
+            } else if (*f == 'c') {
+                char c = (char)va_arg(args, int);
+                *out++ = c;
+            } else if (*f == '%') {
+                *out++ = '%';
+            }
+            f++;
+        } else {
+            *out++ = *f++;
+        }
+    }
+    *out = '\0';
+    va_end(args);
+}

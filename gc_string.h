@@ -11,5 +11,6 @@ char *gc_strndup(const char *str, size_t n);
 size_t gc_strnlen(const char *str, size_t max_len);
 int ends_with(const char *str, const char *suffix);
 void get_filename_without_extension(const char *file_path, char *out_name);
+void gc_snprintf(char *buffer, const char *format, ...);
 
 #endif //GC_STRING_H

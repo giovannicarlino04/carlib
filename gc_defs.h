@@ -42,6 +42,10 @@ typedef unsigned long gc_size;   // For size values (platform-dependent)
 #define uint16 uint16_t
 #define uint32 uint32_t
 #define uint64 uint64_t
+
+#ifdef size_t
+#undef size_t
 typedef unsigned int size_t;
+#endif
 
 #endif // GC_DEFS_H
