@@ -1,4 +1,5 @@
 #include "gc_binpatch.h"
+#include "gc_memory.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,7 @@ LONGLONG gc_bin_aobscan_file(const char* path, const char* pattern_str) {
     SIZE_T size = ftell(file);
     rewind(file);
     
-    BYTE* data = (BYTE*)malloc(size);
+    BYTE* data = (BYTE*)gc_malloc(size);
     if (!data) {
         fclose(file);
         return -1;
