@@ -78,34 +78,3 @@ int gc_mouse_released(int button) {
     if (button < 0 || button >= 3) return 0;
     return !mouse_down[button] && mouse_prev[button];
 }
-
-// Optional: handle mouse messages if you want to track input via window messages
-LRESULT gc_input_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_MOUSEMOVE: {
-            POINTS pts = MAKEPOINTS(lParam);
-            mouse_pos.x = pts.x;
-            mouse_pos.y = pts.y;
-            break;
-        }
-        case WM_LBUTTONDOWN:
-            mouse_down[0] = 1;
-            break;
-        case WM_LBUTTONUP:
-            mouse_down[0] = 0;
-            break;
-        case WM_RBUTTONDOWN:
-            mouse_down[1] = 1;
-            break;
-        case WM_RBUTTONUP:
-            mouse_down[1] = 0;
-            break;
-        case WM_MBUTTONDOWN:
-            mouse_down[2] = 1;
-            break;
-        case WM_MBUTTONUP:
-            mouse_down[2] = 0;
-            break;
-    }
-    return 0;
-}
