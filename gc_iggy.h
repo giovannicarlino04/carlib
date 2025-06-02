@@ -1,3 +1,6 @@
+// Directly from https://github.com/eterniti/eternity_common/blob/main/Misc/IggyFile.cpp || IggyFile.h
+
+
 #ifndef IGGY_H
 #define IGGY_H
 
@@ -104,5 +107,12 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
 struct IGGYHeader gc_parse_iggy(const char *filename);
 int ends_with(const char *str, const char *suffix);
 int gc_isIggyFile(const char *filepath);
+
+int gc_parse_flash_data32(const uint8_t *buf, size_t size, struct IGGYFlashHeader32 *hdr_out);
+int gc_parse_flash_data64(const uint8_t *buf, size_t size, struct IGGYFlashHeader64 *hdr_out);
+uint8_t *gc_get_abc_blob32(const uint8_t *flash_buf, size_t flash_size, uint32_t *psize);
+uint8_t *gc_get_abc_blob64(const uint8_t *flash_buf, size_t flash_size, uint32_t *psize);
+int gc_set_abc_blob32(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size);
+int gc_set_abc_blob64(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size);
 
 #endif //IGGY_H

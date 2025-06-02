@@ -1,4 +1,3 @@
-
 #include "gc_iggy.h"
 #include "gc_string.h"
 
@@ -190,4 +189,88 @@ int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfi
 int gc_isIggyFile(const char *filepath) {
 
     return gc_file_check_extension(filepath, ".iggy"); // Nessuna estensione trovata, non è un file .iggy
+}
+
+int gc_parse_flash_data32(const uint8_t *buf, size_t size, struct IGGYFlashHeader32 *hdr_out) {
+    if (!buf || size < sizeof(struct IGGYFlashHeader32) || !hdr_out)
+        return -1;
+    memcpy(hdr_out, buf, sizeof(struct IGGYFlashHeader32));
+    if (hdr_out->main_offset < sizeof(struct IGGYFlashHeader32))
+        return -2;
+    if (hdr_out->as3_section_offset >= size || hdr_out->unk_offset >= size || hdr_out->unk_offset2 >= size || hdr_out->unk_offset3 >= size)
+        return -3;
+    return 0;
+}
+
+int gc_parse_flash_data64(const uint8_t *buf, size_t size, struct IGGYFlashHeader64 *hdr_out) {
+    if (!buf || size < sizeof(struct IGGYFlashHeader64) || !hdr_out)
+        return -1;
+    memcpy(hdr_out, buf, sizeof(struct IGGYFlashHeader64));
+    if (hdr_out->main_offset < sizeof(struct IGGYFlashHeader64))
+        return -2;
+    if (hdr_out->as3_section_offset >= size || hdr_out->unk_offset >= size || hdr_out->unk_offset2 >= size || hdr_out->unk_offset3 >= size)
+        return -3;
+    return 0;
+}
+
+uint8_t *gc_get_abc_blob32(const uint8_t *flash_buf, size_t flash_size, uint32_t *psize) {
+    if (!flash_buf || flash_size < sizeof(struct IGGYFlashHeader32) || !psize)
+        return NULL;
+    const struct IGGYFlashHeader32 *hdr = (const struct IGGYFlashHeader32 *)flash_buf;
+    size_t as3_code_offset = hdr->as3_code_offset;
+    if (as3_code_offset == 1 || as3_code_offset + 8 > flash_size)
+        return NULL;
+    const uint8_t *ptr = flash_buf + as3_code_offset + offsetof(struct IGGYFlashHeader32, as3_code_offset);
+    uint32_t size = *(const uint32_t *)(ptr - 4); // ptr[4] in C++
+    if (size == 0 || (ptr + size) > (flash_buf + flash_size))
+        return NULL;
+    *psize = size;
+    uint8_t *out = (uint8_t *)malloc(size);
+    if (!out) return NULL;
+    memcpy(out, ptr, size);
+    return out;
+}
+
+uint8_t *gc_get_abc_blob64(const uint8_t *flash_buf, size_t flash_size, uint32_t *psize) {
+    if (!flash_buf || flash_size < sizeof(struct IGGYFlashHeader64) || !psize)
+        return NULL;
+    const struct IGGYFlashHeader64 *hdr = (const struct IGGYFlashHeader64 *)flash_buf;
+    size_t as3_code_offset = (size_t)hdr->as3_code_offset;
+    if (as3_code_offset == 1 || as3_code_offset + 0xC > flash_size)
+        return NULL;
+    const uint8_t *ptr = flash_buf + as3_code_offset + offsetof(struct IGGYFlashHeader64, as3_code_offset);
+    uint32_t size = *(const uint32_t *)(ptr - 4); // ptr[8] in C++
+    if (size == 0 || (ptr + size) > (flash_buf + flash_size))
+        return NULL;
+    *psize = size;
+    uint8_t *out = (uint8_t *)malloc(size);
+    if (!out) return NULL;
+    memcpy(out, ptr, size);
+    return out;
+}
+
+int gc_set_abc_blob32(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size) {
+    if (!flash_buf || !abc || flash_size < sizeof(struct IGGYFlashHeader32))
+        return -1;
+    struct IGGYFlashHeader32 *hdr = (struct IGGYFlashHeader32 *)flash_buf;
+    size_t as3_code_offset = hdr->as3_code_offset;
+    if (as3_code_offset == 1 || as3_code_offset + 8 > flash_size)
+        return -2;
+    uint8_t *ptr = flash_buf + as3_code_offset + offsetof(struct IGGYFlashHeader32, as3_code_offset);
+    *(uint32_t *)(ptr - 4) = abc_size;
+    memcpy(ptr, abc, abc_size);
+    return 0;
+}
+
+int gc_set_abc_blob64(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size) {
+    if (!flash_buf || !abc || flash_size < sizeof(struct IGGYFlashHeader64))
+        return -1;
+    struct IGGYFlashHeader64 *hdr = (struct IGGYFlashHeader64 *)flash_buf;
+    size_t as3_code_offset = (size_t)hdr->as3_code_offset;
+    if (as3_code_offset == 1 || as3_code_offset + 0xC > flash_size)
+        return -2;
+    uint8_t *ptr = flash_buf + as3_code_offset + offsetof(struct IGGYFlashHeader64, as3_code_offset);
+    *(uint32_t *)(ptr - 4) = abc_size;
+    memcpy(ptr, abc, abc_size);
+    return 0;
 }
