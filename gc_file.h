@@ -1,9 +1,8 @@
 #ifndef GC_FILE_H
 #define GC_FILE_H
+#include <stdio.h>
 
-#include <Windows.h>
-
-long gc_file_size(HANDLE *f);
+long gc_file_size(FILE *f);
 int gc_file_exists (char *filename);
 int gc_file_check_extension(const char *filepath, const char *extension);
 int gc_copy_file(const char *src_path, const char *dest_path);

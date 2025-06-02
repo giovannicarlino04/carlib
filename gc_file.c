@@ -1,5 +1,7 @@
 #include "gc_file.h"
 #include "gc_memory.h"
+#include <stdio.h>
+#include <sys/stat.h>
 
 long gc_file_size(FILE *f) {
     if (!f) return -1;
@@ -13,7 +15,7 @@ long gc_file_size(FILE *f) {
 
 int gc_file_exists (char *filename)
 {
-    struct stat   buffer;   
+    struct stat buffer;   
     return (stat (filename, &buffer) == 0);
 }
 

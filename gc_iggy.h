@@ -105,7 +105,6 @@ struct IGGYFlashHeader64
 } ;
 int gc_parse_iggy_subfiles(const char *file_path, struct IGGYSubFileEntry *subfiles, unsigned int num_subfiles);
 struct IGGYHeader gc_parse_iggy(const char *filename);
-int ends_with(const char *str, const char *suffix);
 int gc_isIggyFile(const char *filepath);
 
 int gc_parse_flash_data32(const uint8_t *buf, size_t size, struct IGGYFlashHeader32 *hdr_out);
@@ -114,5 +113,43 @@ uint8_t *gc_get_abc_blob32(const uint8_t *flash_buf, size_t flash_size, uint32_t
 uint8_t *gc_get_abc_blob64(const uint8_t *flash_buf, size_t flash_size, uint32_t *psize);
 int gc_set_abc_blob32(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size);
 int gc_set_abc_blob64(uint8_t *flash_buf, size_t flash_size, const uint8_t *abc, uint32_t abc_size);
+
+// C implementations of IggyFile logic
+int gc_load_flash_data32(const uint8_t *buf, size_t size,
+    uint8_t **main_section, size_t *main_size,
+    uint8_t **as3_names_section, size_t *as3_names_size,
+    uint8_t **as3_code_section, size_t *as3_code_size,
+    uint8_t **names_section, size_t *names_size,
+    uint8_t **last_section, size_t *last_size,
+    uint32_t *as3_offset);
+
+int gc_load_flash_data64(const uint8_t *buf, size_t size,
+    uint8_t **main_section, size_t *main_size,
+    uint8_t **as3_names_section, size_t *as3_names_size,
+    uint8_t **as3_code_section, size_t *as3_code_size,
+    uint8_t **names_section, size_t *names_size,
+    uint8_t **last_section, size_t *last_size,
+    uint32_t *as3_offset);
+
+void gc_save_flash_data32(uint8_t *buf, size_t size,
+    const uint8_t *main_section, size_t main_size,
+    const uint8_t *as3_names_section, size_t as3_names_size,
+    const uint8_t *as3_code_section, size_t as3_code_size,
+    const uint8_t *names_section, size_t names_size,
+    const uint8_t *last_section, size_t last_size);
+
+void gc_save_flash_data64(uint8_t *buf, size_t size,
+    const uint8_t *main_section, size_t main_size,
+    const uint8_t *as3_names_section, size_t as3_names_size,
+    const uint8_t *as3_code_section, size_t as3_code_size,
+    const uint8_t *names_section, size_t names_size,
+    const uint8_t *last_section, size_t last_size);
+
+size_t gc_get_flash_data_size(size_t main_size, size_t as3_names_size, size_t as3_code_size, size_t names_size, size_t last_size);
+
+uint8_t *gc_get_abc_blob_from_section(const uint8_t *as3_code_section, size_t as3_code_size, int is_64, uint32_t *psize);
+
+int gc_set_abc_blob_in_section(uint8_t **as3_code_section, size_t *as3_code_size, int is_64, const void *abc, uint32_t size);
+void write_uncompressed_swf_header_from_iggy(FILE *f, uint32_t file_length, uint32_t width, uint32_t height, float framerate, uint16_t frame_count);
 
 #endif //IGGY_H
