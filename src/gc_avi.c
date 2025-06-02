@@ -1,24 +1,31 @@
-#include "gc_avi.h"
-#include <windows.h>
-#include <mfapi.h>
-#include <mfplay.h>
-#include <mfreadwrite.h>
-#include <mftransform.h>
-#include <mfobjects.h>
-#include <shlwapi.h>
-#include <strmif.h>
-#include <initguid.h>
+/*
+    TODO (Giovanni): Support the fucking H.264 codec.
+    This is a nightmare, Media Foundation does not support H.264 decoding natively.
+    And, making this code cross platform would be a nightmare if I don't start to implement functions myself.
+*/
+#ifdef _WIN32
 
+#include "common.h"
+
+// These libraries are required for Media Foundation functionality.
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
 #pragma comment(lib, "mf.lib")
 #pragma comment(lib, "shlwapi.lib")
+#endif
 
-struct gc_avi {
+typedef DLLEXPORT struct gc_avi {
     IMFSourceReader* reader;
     IMFMediaType* outputType;
-};
+} gc_avi;
+
+typedef DLLEXPORT struct {
+    uint8_t* data;
+    int width;
+    int height;
+    int stride;
+} gc_frame_t;
 
 HRESULT MFGetAttributeSize(
     IMFAttributes *pAttributes,
@@ -35,7 +42,7 @@ HRESULT MFGetAttributeSize(
     return hr;
 }
 
-static void gc_initialize_media_foundation() {
+DLLEXPORT void  gc_initialize_media_foundation() {
     static int initialized = 0;
     if (!initialized) {
         if (FAILED(MFStartup(MF_VERSION, MFSTARTUP_LITE))) {
@@ -50,17 +57,18 @@ void DumpMediaTypes(IMFSourceReader* reader) {
     DWORD i = 0;
     HRESULT hr;
     IMFMediaType* pType = NULL;
-    CHAR* guidString = NULL;
-
+    GUID subtype;
+    // Now this one is a bit tricky, we need to get the media types from the reader.
     while (SUCCEEDED(hr = reader->lpVtbl->GetNativeMediaType(reader, MF_SOURCE_READER_FIRST_VIDEO_STREAM, i, &pType))) {
-        hr = (HRESULT )pType->lpVtbl->GetGUID(pType, &MF_MT_SUBTYPE, &guidString);
+        hr = pType->lpVtbl->GetGUID(pType, &MF_MT_SUBTYPE, &subtype);
+        // Optionally print or use subtype here
         pType->lpVtbl->Release(pType);
         pType = NULL;
         i++;
     }
 }
 
-gc_avi* gc_open(const char* path) {
+DLLEXPORT gc_avi* gc_open(const char* path) {
     gc_initialize_media_foundation();
 
     gc_avi* avi = (gc_avi*)calloc(1, sizeof(gc_avi));
@@ -128,7 +136,7 @@ gc_avi* gc_open(const char* path) {
     return avi;
 }
 
-static void print_guid(const GUID* guid) {
+internal void print_guid(const GUID* guid) {
     char buf[64];
     wsprintfA(buf, "{%08lX-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
         guid->Data1, guid->Data2, guid->Data3,
@@ -138,7 +146,7 @@ static void print_guid(const GUID* guid) {
 }
 
 
-int gc_decode_next_frame(gc_avi* avi, gc_frame_t* out) {
+DLLEXPORT int gc_decode_next_frame(gc_avi* avi, gc_frame_t* out) {
     if (!avi || !out) {
         return -1;
     }
@@ -267,7 +275,7 @@ int gc_decode_next_frame(gc_avi* avi, gc_frame_t* out) {
     return 1;
 }
 
-void gc_free_frame(gc_frame_t* frame) {
+DLLEXPORT void gc_free_frame(gc_frame_t* frame) {
     if (!frame)
         return;
 
@@ -282,7 +290,7 @@ void gc_free_frame(gc_frame_t* frame) {
 }
 
 
-void gc_close(gc_avi* avi) {
+DLLEXPORT void gc_close(gc_avi* avi) {
     if (!avi) return;
     if (avi->outputType) {
         avi->outputType->lpVtbl->Release(avi->outputType);

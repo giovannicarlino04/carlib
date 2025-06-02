@@ -1,6 +1,7 @@
-#include "gc_string.h"
+#include "common.h"
 
-static void gc_json_escape_string(const char* str, HANDLE out) {
+
+internal void gc_json_escape_string(const char* str, HANDLE out) {
     const char* p = str;
     DWORD written;
     char c;
@@ -35,7 +36,7 @@ static void gc_json_escape_string(const char* str, HANDLE out) {
     WriteFile(out, &c, 1, &written, NULL);
 }
 
-char* gc_strndup(const char *str, size_t n) {
+DLLEXPORT char* gc_strndup(const char *str, size_t n) {
     size_t len = strnlen(str, n);
     
     char* copy = (char*)gc_malloc(len + 1);  
@@ -48,7 +49,7 @@ char* gc_strndup(const char *str, size_t n) {
     return copy;
 }
 
-size_t gc_strnlen(const char *str, size_t max_len) {
+DLLEXPORT size_t gc_strnlen(const char *str, size_t max_len) {
     size_t len = 0;
     while (len < max_len && str[len] != '\0') {
         len++;
@@ -56,7 +57,7 @@ size_t gc_strnlen(const char *str, size_t max_len) {
     return len;
 }
 
-int ends_with(const char *str, const char *suffix) {
+DLLEXPORT int gc_ends_with(const char *str, const char *suffix) {
     size_t str_len = strlen(str);
     size_t suffix_len = strlen(suffix);
     if (str_len < suffix_len) {
@@ -65,14 +66,14 @@ int ends_with(const char *str, const char *suffix) {
     return strcmp(str + str_len - suffix_len, suffix) == 0;
 }
 
-void get_filename_without_extension(const char *file_path, char *out_name) {
+DLLEXPORT void gc_get_filename_without_extension(const char *file_path, char *out_name) {
     const char *dot = strrchr(file_path, '.');
     size_t len = dot ? (size_t)(dot - file_path) : strlen(file_path);
     strncpy(out_name, file_path, len);
     out_name[len] = '\0';
 }
 //TODO: Implement a more robust version that handles floating point numbers, padding, etc.
-void gc_snprintf(char *buffer, const char *format, ...) {
+DLLEXPORT void gc_snprintf(char *buffer, const char *format, ...) {
     va_list args;
     va_start(args, format);
 

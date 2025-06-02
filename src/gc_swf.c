@@ -1,8 +1,43 @@
-#include "gc_swf.h"
-#include "gc_common.h"
-#include "gc_memory.h"
+#include "common.h"
 
-gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
+typedef enum {
+    GC_SWF_OK = 0,
+    GC_SWF_ERR_IO,
+    GC_SWF_ERR_INVALID,
+    GC_SWF_ERR_MEMORY
+} gc_swf_error_t;
+
+typedef enum {
+    GC_SWF_COMP_NONE = 0,
+    GC_SWF_COMP_ZLIB,
+    GC_SWF_COMP_LZMA
+} gc_swf_compression_t;
+
+typedef struct {
+    uint8_t version;
+    uint32_t file_length;
+    gc_swf_compression_t compression;
+    uint16_t frame_count;
+    float frame_rate;
+    uint32_t frame_width;
+    uint32_t frame_height;
+} gc_swf_header_t;
+
+typedef struct {
+    uint16_t tag_code;
+    uint32_t tag_length;
+    uint8_t *tag_data;
+} gc_swf_tag_t;
+
+typedef struct {
+    HANDLE *file;
+    gc_swf_header_t header;
+    uint32_t current_offset;
+    int compressed_stream_start;
+    void *decompressor; // optional in full version
+} gc_swf_context_t;
+
+DLLEXPORT gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     HANDLE file = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == INVALID_HANDLE_VALUE) {
@@ -10,7 +45,7 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
         return NULL;
     }
 
-    gc_swf_context_t *ctx = HeapAlloc(GC_HEAP, HEAP_ZERO_MEMORY, sizeof(gc_swf_context_t));
+    gc_swf_context_t *ctx = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(gc_swf_context_t));
     if (!ctx) {
         CloseHandle(file);
         if (err) *err = GC_SWF_ERR_MEMORY;
@@ -23,7 +58,7 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     char signature[3];
     DWORD bytes_read;
     if (!ReadFile(file, signature, 3, &bytes_read, NULL) || bytes_read != 3) {
-        HeapFree(GC_HEAP, 0, ctx);
+        HeapFree(GetProcessHeap(), 0, ctx);
         CloseHandle(file);
         if (err) *err = GC_SWF_ERR_IO;
         return NULL;
@@ -32,7 +67,7 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     // Read version
     uint8_t version;
     if (!ReadFile(file, &version, 1, &bytes_read, NULL) || bytes_read != 1) {
-        HeapFree(GC_HEAP, 0, ctx);
+        HeapFree(GetProcessHeap(), 0, ctx);
         CloseHandle(file);
         if (err) *err = GC_SWF_ERR_IO;
         return NULL;
@@ -50,7 +85,7 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     } else if (memcmp(signature, "ZWS", 3) == 0) {
         ctx->header.compression = GC_SWF_COMP_LZMA; // not implemented
     } else {
-        HeapFree(GC_HEAP, 0, ctx);
+        HeapFree(GetProcessHeap(), 0, ctx);
         CloseHandle(file);
         if (err) *err = GC_SWF_ERR_INVALID;
         return NULL;
@@ -59,7 +94,7 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     // Read RECT header (frame size) — skip ahead
     uint8_t nbits_byte;
     if (!ReadFile(file, &nbits_byte, 1, &bytes_read, NULL) || bytes_read != 1) {
-        HeapFree(GC_HEAP, 0, ctx);
+        HeapFree(GetProcessHeap(), 0, ctx);
         CloseHandle(file);
         if (err) *err = GC_SWF_ERR_IO;
         return NULL;
@@ -84,20 +119,20 @@ gc_swf_context_t* gc_swf_open(const char *filename, gc_swf_error_t *err) {
     return ctx;
 }
 
-void gc_swf_close(gc_swf_context_t *ctx) {
+DLLEXPORT void gc_swf_close(gc_swf_context_t *ctx) {
     if (!ctx) return;
     if (ctx->file && ctx->file != INVALID_HANDLE_VALUE) {
         CloseHandle(ctx->file);
     }
-    HeapFree(GC_HEAP, 0, ctx);
+    HeapFree(GetProcessHeap(), 0, ctx);
 }
 
-gc_swf_header_t* gc_swf_get_header(gc_swf_context_t *ctx) {
+DLLEXPORT gc_swf_header_t* gc_swf_get_header(gc_swf_context_t *ctx) {
     if (!ctx) return NULL;
     return &ctx->header;
 }
 
-int gc_swf_read_next_tag(gc_swf_context_t *ctx, gc_swf_tag_t *tag) {
+DLLEXPORT int gc_swf_read_next_tag(gc_swf_context_t *ctx, gc_swf_tag_t *tag) {
     if (!ctx || ctx->file == INVALID_HANDLE_VALUE || !tag) return 0;
 
     uint16_t tag_code_and_length;
@@ -134,8 +169,7 @@ int gc_swf_read_next_tag(gc_swf_context_t *ctx, gc_swf_tag_t *tag) {
     return 1;
 }
 
-
-void gc_swf_free_tag(gc_swf_tag_t *tag) {
+DLLEXPORT void gc_swf_free_tag(gc_swf_tag_t *tag) {
     if (tag && tag->tag_data) {
         free(tag->tag_data);
         tag->tag_data = NULL;

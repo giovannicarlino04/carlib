@@ -1,23 +1,29 @@
-#include "gc_patch.h"
+#include "common.h"
 
-static BOOL gc_unprotect_memory(BYTE* address, SIZE_T len, DWORD* oldProtect) {
+typedef struct {
+    BYTE* address;
+    BYTE* original;
+    SIZE_T length;
+} GC_Patch;
+
+internal BOOL gc_unprotect_memory(BYTE* address, SIZE_T len, DWORD* oldProtect) {
     return VirtualProtect(address, len, PAGE_EXECUTE_READWRITE, oldProtect);
 }
 
-static void gc_reprotect_memory(BYTE* address, SIZE_T len, DWORD oldProtect) {
+internal void gc_reprotect_memory(BYTE* address, SIZE_T len, DWORD oldProtect) {
     DWORD _;
     VirtualProtect(address, len, oldProtect, &_);
 }
 
 // Helper to convert pattern string to bytes
-static BOOL gc_pattern_match(const BYTE* data, const BYTE* pattern, const char* mask, SIZE_T len) {
+internal BOOL gc_pattern_match(const BYTE* data, const BYTE* pattern, const char* mask, SIZE_T len) {
     for (SIZE_T i = 0; i < len; i++) {
         if (mask[i] == 'x' && data[i] != pattern[i]) return FALSE;
     }
     return TRUE;
 }
 
-static void gc_parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SIZE_T* out_len) {
+internal void gc_parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SIZE_T* out_len) {
     SIZE_T i = 0;
     const char* p = pattern_str;
     
@@ -42,7 +48,7 @@ static void gc_parse_pattern(const char* pattern_str, BYTE* pattern, char* mask,
     *out_len = i;
 }
 
-BYTE* gc_aobscan(const char* pattern_str, BYTE* start, SIZE_T size) {
+DLLEXPORT BYTE* gc_aobscan(const char* pattern_str, BYTE* start, SIZE_T size) {
     BYTE pattern[256];
     char mask[256];
     SIZE_T pattern_len = 0;
@@ -58,7 +64,7 @@ BYTE* gc_aobscan(const char* pattern_str, BYTE* start, SIZE_T size) {
     
     return NULL;
 }
-BYTE* gc_aobscan_external(const char* pattern_str, BYTE* start, SIZE_T size, HANDLE process) {
+DLLEXPORT BYTE* gc_aobscan_external(const char* pattern_str, BYTE* start, SIZE_T size, HANDLE process) {
     BYTE pattern[256];
     char mask[256];
     SIZE_T pattern_len = 0;
@@ -85,7 +91,7 @@ BYTE* gc_aobscan_external(const char* pattern_str, BYTE* start, SIZE_T size, HAN
     free(buffer);
     return NULL;
 }
-BOOL gc_patch_bytes(BYTE* address, const BYTE* bytes, SIZE_T len, GC_Patch* out_patch) {
+DLLEXPORT BOOL gc_patch_bytes(BYTE* address, const BYTE* bytes, SIZE_T len, GC_Patch* out_patch) {
     DWORD oldProtect;
     if (!gc_unprotect_memory(address, len, &oldProtect)) return FALSE;
     
@@ -102,7 +108,7 @@ BOOL gc_patch_bytes(BYTE* address, const BYTE* bytes, SIZE_T len, GC_Patch* out_
     return TRUE;
 }
 
-BOOL gc_patch_nop(BYTE* address, SIZE_T len, GC_Patch* out_patch) {
+DLLEXPORT BOOL gc_patch_nop(BYTE* address, SIZE_T len, GC_Patch* out_patch) {
     BYTE* nop_block = (BYTE*)malloc(len);
     if (!nop_block) return FALSE;
     memset(nop_block, 0x90, len); // NOP = 0x90
@@ -111,7 +117,7 @@ BOOL gc_patch_nop(BYTE* address, SIZE_T len, GC_Patch* out_patch) {
     return result;
 }
 
-BOOL gc_restore_bytes(const GC_Patch* patch) {
+DLLEXPORT BOOL gc_restore_bytes(const GC_Patch* patch) {
     if (!patch || !patch->original || !patch->address) return FALSE;
     DWORD oldProtect;
     if (!gc_unprotect_memory(patch->address, patch->length, &oldProtect)) return FALSE;

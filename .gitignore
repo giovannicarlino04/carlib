@@ -1,0 +1,32 @@
+# Build output
+/build/
+/bin/
+/obj/
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.obj
+*.exe
+
+# VS/CL/Windows temp files
+*.log
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# Visual Studio Code files
+/.vscode/
+
+# Editor/OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.bak

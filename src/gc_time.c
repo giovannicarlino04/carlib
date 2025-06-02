@@ -1,34 +1,39 @@
-#include "gc_time.h"
+#include "common.h"
 
 static LARGE_INTEGER frequency;
 
+// High-resolution timer struct
+typedef struct Timer {
+    LARGE_INTEGER start_time;
+} Timer;
+
 // Initialize performance frequency only once
-static void init_frequency() {
+internal void init_frequency() {
     if (frequency.QuadPart == 0) {
         QueryPerformanceFrequency(&frequency);
     }
 }
 
-double gc_getCurrentTime(void) {
+DLLEXPORT double gc_getCurrentTime(void) {
     init_frequency();
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (double)now.QuadPart / frequency.QuadPart;
 }
 
-void gc_startTimer(Timer* timer) {
+DLLEXPORT void gc_startTimer(Timer* timer) {
     init_frequency();
     QueryPerformanceCounter(&timer->start_time);
 }
 
-double gc_getElapsedTime(Timer* timer) {
+DLLEXPORT double gc_getElapsedTime(Timer* timer) {
     init_frequency();
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     return (double)(now.QuadPart - timer->start_time.QuadPart) / frequency.QuadPart;
 }
 
-void gc_sleepFor(double seconds) {
+DLLEXPORT void gc_sleepFor(double seconds) {
     DWORD ms = (DWORD)(seconds * 1000.0);
     Sleep(ms);
 }

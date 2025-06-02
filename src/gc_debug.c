@@ -1,12 +1,11 @@
-#include "gc_debug.h"
+#include "common.h"
 
-// Function definition for Windows platform
 #ifdef _WIN32
-void gc_MessageBox(const char* message, int type) {
+DLLEXPORT void gc_MessageBox(const char* message, int type) {
     MessageBoxA(NULL, message, "Error", type);
 }
 #else
-void gc_MessageBox(const char* message,  int type) {
+DLLEXPORT void gc_MessageBox(const char* message,  int type) {
     char* type_linux;
     switch(type){
         case MB_ICONINFORMATION:

@@ -1,7 +1,8 @@
-#include "gc_binpatch.h"
-#include "gc_memory.h"
+#include "common.h"
+#include <minwindef.h>
+#include <stdio.h>
 
-static void parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SIZE_T* out_len) {
+internal void parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SIZE_T* out_len) {
     SIZE_T i = 0;
     const char* p = pattern_str;
     
@@ -26,7 +27,7 @@ static void parse_pattern(const char* pattern_str, BYTE* pattern, char* mask, SI
     *out_len = i;
 }
 
-static BOOL pattern_matches(const BYTE* data, const BYTE* pattern, const char* mask, SIZE_T len) {
+internal BOOL pattern_matches(const BYTE* data, const BYTE* pattern, const char* mask, SIZE_T len) {
     for (SIZE_T i = 0; i < len; ++i) {
         if (mask[i] == 'x' && data[i] != pattern[i])
             return FALSE;
@@ -34,7 +35,7 @@ static BOOL pattern_matches(const BYTE* data, const BYTE* pattern, const char* m
     return TRUE;
 }
 
-LONGLONG gc_bin_aobscan_file(const char* path, const char* pattern_str) {
+DLLEXPORT LONGLONG gc_bin_aobscan_file(const char* path, const char* pattern_str) {
     FILE* file = fopen(path, "rb");
     if (!file) return -1;
     
@@ -67,25 +68,7 @@ LONGLONG gc_bin_aobscan_file(const char* path, const char* pattern_str) {
     return -1;
 }
 
-BOOL gc_bin_patch_file(const char* path, LONGLONG offset, const BYTE* bytes, SIZE_T len) {
-    if (!gc_bin_backup(path)) return FALSE;
-    
-    FILE* file = fopen(path, "rb+");
-    if (!file) return FALSE;
-    
-    fseek(file, (long)offset, SEEK_SET);
-    fwrite(bytes, 1, len, file);
-    fclose(file);
-    return TRUE;
-}
-
-BOOL gc_bin_patch_aob(const char* path, const char* pattern_str, const BYTE* patch, SIZE_T len) {
-    LONGLONG offset = gc_bin_aobscan_file(path, pattern_str);
-    if (offset == -1) return FALSE;
-    return gc_bin_patch_file(path, offset, patch, len);
-}
-
-BOOL gc_bin_backup(const char* path) {
+DLLEXPORT BOOL gc_bin_backup(const char* path) {
     char backup_path[MAX_PATH];
     snprintf(backup_path, MAX_PATH, "%s.bak", path);
     
@@ -107,4 +90,22 @@ BOOL gc_bin_backup(const char* path) {
     fclose(src);
     fclose(dst);
     return TRUE;
+}
+
+DLLEXPORT BOOL gc_bin_patch_file(const char* path, LONGLONG offset, const BYTE* bytes, SIZE_T len) {
+    if (!gc_bin_backup(path)) return FALSE;
+    
+    FILE* file = fopen(path, "rb+");
+    if (!file) return FALSE;
+    
+    fseek(file, (long)offset, SEEK_SET);
+    fwrite(bytes, 1, len, file);
+    fclose(file);
+    return TRUE;
+}
+
+DLLEXPORT BOOL gc_bin_patch_aob(const char* path, const char* pattern_str, const BYTE* patch, SIZE_T len) {
+    LONGLONG offset = gc_bin_aobscan_file(path, pattern_str);
+    if (offset == -1) return FALSE;
+    return gc_bin_patch_file(path, offset, patch, len);
 }

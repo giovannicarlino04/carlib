@@ -1,9 +1,6 @@
-#include "gc_file.h"
-#include "gc_memory.h"
-#include <stdio.h>
-#include <sys/stat.h>
+#include "common.h"
 
-long gc_file_size(FILE *f) {
+DLLEXPORT long gc_file_size(FILE *f) {
     if (!f) return -1;
     long cur = ftell(f);
     if (cur == -1) return -1;
@@ -13,13 +10,13 @@ long gc_file_size(FILE *f) {
     return size;
 }
 
-int gc_file_exists (char *filename)
+DLLEXPORT int gc_file_exists (char *filename)
 {
     struct stat buffer;   
     return (stat (filename, &buffer) == 0);
 }
 
-int gc_file_check_extension(const char *filepath, const char *extension) {
+DLLEXPORT int gc_file_check_extension(const char *filepath, const char *extension) {
     const char *srcExtension = strrchr(filepath, '.'); 
     
     if (srcExtension != NULL) {
@@ -33,7 +30,7 @@ int gc_file_check_extension(const char *filepath, const char *extension) {
 // On success, returns pointer to buffer, sets *out_size to file size.
 // On failure, returns NULL, *out_size is 0.
 // Caller must free() returned buffer.
-unsigned char* gc_read_file(const char *path, size_t *out_size) {
+DLLEXPORT unsigned char* gc_read_file(const char *path, size_t *out_size) {
     if (out_size) *out_size = 0;
     FILE *f = fopen(path, "rb");
     if (!f) return NULL;
@@ -69,7 +66,7 @@ unsigned char* gc_read_file(const char *path, size_t *out_size) {
 }
 
 //(caller responsibility to handle)
-void gc_read_file_lines(const char *path) {
+DLLEXPORT void gc_read_file_lines(const char *path) {
     FILE *f = fopen(path, "r");
     if (!f) return;
 
@@ -81,7 +78,7 @@ void gc_read_file_lines(const char *path) {
     fclose(f);
 }
 
-int gc_copy_file(const char *src_path, const char *dest_path) {
+DLLEXPORT int gc_copy_file(const char *src_path, const char *dest_path) {
     FILE *src = fopen(src_path, "rb");
     if (!src) {
         perror("Failed to open source file");
@@ -113,7 +110,7 @@ int gc_copy_file(const char *src_path, const char *dest_path) {
 }
 
 
-int gc_move_file(const char *src_path, const char *dest_path) {
+DLLEXPORT int gc_move_file(const char *src_path, const char *dest_path) {
     if (rename(src_path, dest_path) == 0) {
         return 0; 
     }
@@ -135,7 +132,7 @@ int gc_move_file(const char *src_path, const char *dest_path) {
     return 0;
 }
 
-int gc_delete_file(const char *path) {
+DLLEXPORT int gc_delete_file(const char *path) {
     if (remove(path) != 0) {
         perror("Failed to delete file");
         return 1;

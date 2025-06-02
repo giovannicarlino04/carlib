@@ -1,9 +1,26 @@
-#include "gc_xenoverse_cms.h"
-#include "gc_memory.h"
-#include "gc_string.h"
-#include <windows.h>
+#include "common.h"
 
-static char* gc_CMSReadString(HANDLE hFile, int32_t address) {
+#define SHORT_NAME_LENGTH 4
+#define MAX_PATHS 7
+
+
+extern char* gc_strndup(const char *str, size_t n);
+
+
+typedef struct {
+    int32_t ID;
+    char ShortName[SHORT_NAME_LENGTH];
+    uint8_t Unknown[8];
+    char* Paths[MAX_PATHS];
+} CMS_Data;
+
+typedef struct {
+    char* FileName;
+    int32_t Count;
+    CMS_Data* Data;
+} CMS;
+
+internal char* gc_CMSReadString(HANDLE hFile, int32_t address) {
     if (address == 0) return NULL;
     // Save current file position
     LARGE_INTEGER origPos;
@@ -37,7 +54,7 @@ static char* gc_CMSReadString(HANDLE hFile, int32_t address) {
     return gc_strndup(buffer, len);
 }
 
-void gc_CMSLoad(CMS* cms, const char* path) {
+DLLEXPORT void gc_CMSLoad(CMS* cms, const char* path) {
     HANDLE hFile = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         // handle error as needed (you may want to add error code return)
@@ -112,7 +129,7 @@ void gc_CMSLoad(CMS* cms, const char* path) {
     CloseHandle(hFile);
 }
 
-void gc_CMSSave(const CMS* cms) {
+DLLEXPORT void gc_CMSSave(const CMS* cms) {
     HANDLE hFile = CreateFileA(cms->FileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         // handle error
@@ -183,7 +200,7 @@ void gc_CMSSave(const CMS* cms) {
     CloseHandle(hFile);
 }
 
-void gc_FreeCMS(CMS* cms) {
+DLLEXPORT void gc_FreeCMS(CMS* cms) {
     for (int i = 0; i < cms->Count; ++i) {
         for (int j = 0; j < MAX_PATHS; ++j) {
             if (cms->Data[i].Paths[j]) {

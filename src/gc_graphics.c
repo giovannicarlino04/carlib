@@ -1,14 +1,20 @@
-#include "gc_graphics.h"
 #include <windows.h>
 #include <string.h>
+#include "common.h"
 
 #define MAX_CONTROLS 1024
 #define MAX_FORMS 64
+
+// Define a function pointer type for form procedures
+typedef LRESULT (*GC_FormProc)(HWND, UINT, WPARAM, LPARAM);
 
 typedef struct {
     HWND hwnd;
     GC_FormProc proc;
 } GCForm;
+
+// Define a function pointer type for control callbacks
+typedef LRESULT (*GCFormCallback)(HWND, UINT, WPARAM, LPARAM);
 
 typedef struct {
     HWND hwnd;
@@ -59,7 +65,7 @@ BOOL gc_process_messages() {
     return TRUE;
 }
 
-static LRESULT gc_call_form_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+internal LRESULT gc_call_form_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     for (int i = 0; i < gc_ctx.form_count; i++) {
         if (gc_ctx.forms[i].hwnd == hwnd && gc_ctx.forms[i].proc)
             return gc_ctx.forms[i].proc(hwnd, msg, wParam, lParam);
@@ -67,13 +73,13 @@ static LRESULT gc_call_form_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     return 0;
 }
 
-static void gc_store_control(HWND hwnd, int id, GCFormCallback cb) {
+internal void gc_store_control(HWND hwnd, int id, GCFormCallback cb) {
     if (gc_ctx.control_count < MAX_CONTROLS) {
         gc_ctx.controls[gc_ctx.control_count++] = (GCControl){ hwnd, id, cb };
     }
 }
 
-LRESULT CALLBACK gc_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+DLLEXPORT LRESULT CALLBACK gc_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (msg == WM_COMMAND) {
         int id = LOWORD(wParam);
         for (int i = 0; i < gc_ctx.control_count; i++) {
@@ -94,7 +100,7 @@ LRESULT CALLBACK gc_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     return res ? res : DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-HWND gc_graphics_init(HINSTANCE hInstance, int nCmdShow, LPCSTR title, int width, int height) {
+DLLEXPORT HWND gc_graphics_init(HINSTANCE hInstance, int nCmdShow, LPCSTR title, int width, int height) {
     gc_width = width;
     gc_height = height;
     gc_ctx.hInstance = hInstance;
@@ -123,7 +129,7 @@ HWND gc_graphics_init(HINSTANCE hInstance, int nCmdShow, LPCSTR title, int width
     return gc_hwnd;
 }
 
-void gc_form_set_proc(HWND hwnd, GC_FormProc proc) {
+DLLEXPORT void gc_form_set_proc(HWND hwnd, GC_FormProc proc) {
     for (int i = 0; i < gc_ctx.form_count; i++) {
         if (gc_ctx.forms[i].hwnd == hwnd) {
             gc_ctx.forms[i].proc = proc;
@@ -134,12 +140,12 @@ void gc_form_set_proc(HWND hwnd, GC_FormProc proc) {
         gc_ctx.forms[gc_ctx.form_count++] = (GCForm){ hwnd, proc };
 }
 
-void gc_form_show(HWND hwnd) {
+DLLEXPORT void gc_form_show(HWND hwnd) {
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
 }
 
-static HWND gc_create_control(LPCSTR className, DWORD style, HWND parent,
+internal HWND gc_create_control(LPCSTR className, DWORD style, HWND parent,
                               const char* text, int x, int y, int w, int h,
                               GCFormCallback cb) {
     int id = gc_ctx.control_count;
@@ -152,56 +158,50 @@ static HWND gc_create_control(LPCSTR className, DWORD style, HWND parent,
     return hwnd;
 }
 
-HWND gc_button_create(HWND parent, const char* text, int x, int y, int w, int h, GCFormCallback cb) {
+DLLEXPORT HWND gc_button_create(HWND parent, const char* text, int x, int y, int w, int h, GCFormCallback cb) {
     return gc_create_control("BUTTON", 0, parent, text, x, y, w, h, cb);
 }
 
-HWND gc_checkbox_create(HWND parent, const char* text, int x, int y, int w, int h, GCFormCallback cb) {
+DLLEXPORT HWND gc_checkbox_create(HWND parent, const char* text, int x, int y, int w, int h, GCFormCallback cb) {
     return gc_create_control("BUTTON", BS_CHECKBOX, parent, text, x, y, w, h, cb);
 }
 
-HWND gc_label_create(HWND parent, const char* text, int x, int y, int w, int h) {
+DLLEXPORT HWND gc_label_create(HWND parent, const char* text, int x, int y, int w, int h) {
     return gc_create_control("STATIC", 0, parent, text, x, y, w, h, NULL);
 }
 
-HWND gc_textbox_create(HWND parent, int x, int y, int w, int h) {
+DLLEXPORT HWND gc_textbox_create(HWND parent, int x, int y, int w, int h) {
     return gc_create_control("EDIT", WS_BORDER | ES_AUTOHSCROLL, parent, "", x, y, w, h, NULL);
 }
 
-void gc_set_control_text(HWND ctrl, const char* text) {
+DLLEXPORT void gc_set_control_text(HWND ctrl, const char* text) {
     SetWindowTextA(ctrl, text);
 }
 
-void gc_get_control_text(HWND ctrl, char* out, int max) {
+DLLEXPORT void gc_get_control_text(HWND ctrl, char* out, int max) {
     GetWindowTextA(ctrl, out, max);
 }
 
-// Graphics API
-
-void gc_quit() {
+DLLEXPORT void gc_quit() {
     gc_running = FALSE;
     if (gc_backbuffer_dc) DeleteDC(gc_backbuffer_dc);
     if (gc_backbuffer_bmp) DeleteObject(gc_backbuffer_bmp);
 }
 
-void gc_clear(COLORREF color) {
+DLLEXPORT void gc_clear(COLORREF color) {
     HBRUSH brush = CreateSolidBrush(color);
     RECT rect = {0, 0, gc_width, gc_height};
     FillRect(gc_backbuffer_dc, &rect, brush);
     DeleteObject(brush);
 }
 
-void gc_present() {
+DLLEXPORT void gc_present() {
     gc_window_dc = GetDC(gc_hwnd);
     BitBlt(gc_window_dc, 0, 0, gc_width, gc_height, gc_backbuffer_dc, 0, 0, SRCCOPY);
     ReleaseDC(gc_hwnd, gc_window_dc);
 }
 
-void gc_draw_line(int x1, int y1, int x2, int y2, COLORREF color) {
-    gc_draw_thick_line(x1, y1, x2, y2, 1, color);
-}
-
-void gc_draw_thick_line(int x1, int y1, int x2, int y2, int thickness, COLORREF color) {
+DLLEXPORT void gc_draw_thick_line(int x1, int y1, int x2, int y2, int thickness, COLORREF color) {
     HPEN pen = CreatePen(PS_SOLID, thickness, color);
     HGDIOBJ old = SelectObject(gc_backbuffer_dc, pen);
     MoveToEx(gc_backbuffer_dc, x1, y1, NULL);
@@ -210,7 +210,12 @@ void gc_draw_thick_line(int x1, int y1, int x2, int y2, int thickness, COLORREF 
     DeleteObject(pen);
 }
 
-void gc_draw_rect(int x, int y, int w, int h, COLORREF color, BOOL filled) {
+DLLEXPORT void gc_draw_line(int x1, int y1, int x2, int y2, COLORREF color) {
+    gc_draw_thick_line(x1, y1, x2, y2, 1, color);
+}
+
+
+DLLEXPORT void gc_draw_rect(int x, int y, int w, int h, COLORREF color, BOOL filled) {
     if (filled) {
         HBRUSH brush = CreateSolidBrush(color);
         RECT rect = {x, y, x + w, y + h};
@@ -224,7 +229,7 @@ void gc_draw_rect(int x, int y, int w, int h, COLORREF color, BOOL filled) {
     }
 }
 
-void gc_draw_circle(int x, int y, int r, COLORREF color, BOOL filled) {
+DLLEXPORT void gc_draw_circle(int x, int y, int r, COLORREF color, BOOL filled) {
     if (filled) {
         HBRUSH brush = CreateSolidBrush(color);
         HGDIOBJ old = SelectObject(gc_backbuffer_dc, brush);
@@ -240,17 +245,17 @@ void gc_draw_circle(int x, int y, int r, COLORREF color, BOOL filled) {
     }
 }
 
-void gc_draw_text(int x, int y, LPCSTR text, COLORREF color) {
+DLLEXPORT void gc_draw_text(int x, int y, LPCSTR text, COLORREF color) {
     SetTextColor(gc_backbuffer_dc, color);
     SetBkMode(gc_backbuffer_dc, TRANSPARENT);
     TextOutA(gc_backbuffer_dc, x, y, text, lstrlenA(text));
 }
 
-HBITMAP gc_load_bitmap(LPCSTR path) {
+DLLEXPORT HBITMAP gc_load_bitmap(LPCSTR path) {
     return (HBITMAP)LoadImageA(NULL, path, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
 }
 
-void gc_draw_bitmap(HBITMAP bmp, int x, int y) {
+DLLEXPORT void gc_draw_bitmap(HBITMAP bmp, int x, int y) {
     HDC memDC = CreateCompatibleDC(gc_backbuffer_dc);
     HGDIOBJ old = SelectObject(memDC, bmp);
     BITMAP bmpInfo;
@@ -260,11 +265,11 @@ void gc_draw_bitmap(HBITMAP bmp, int x, int y) {
     DeleteDC(memDC);
 }
 
-void gc_set_title(LPCSTR title) {
+DLLEXPORT void gc_set_title(LPCSTR title) {
     SetWindowTextA(gc_hwnd, title);
 }
 
-float gc_get_delta_time() {
+DLLEXPORT float gc_get_delta_time() {
     DWORD now = GetTickCount();
     float delta = (now - gc_last_time) / 1000.0f;
     gc_last_time = now;

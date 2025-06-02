@@ -1,25 +1,42 @@
-#include "gc_network.h"
-#include "gc_debug.h"
-#include "gc_memory.h"
+#include <winsock.h>
+
+#include "common.h"
+
+#define DEFAULT_PORT 8080
+#define MAX_SIZE 4096
+
+typedef int socklen_t;
+
+// Struct to manage the server
+typedef struct {
+    SOCKET server_socket;
+    struct sockaddr_in server_addr;
+    int port;
+} NetworkServer;
+
+
+// Cleanup the server (close socket, etc.)
+DLLEXPORT void gc_network_cleanup(NetworkServer *server) {
+    closesocket(server->server_socket);
+    WSACleanup();
+    close(server->server_socket);
+}
+
 
 // Cross-platform network initialization
-int gc_network_init(NetworkServer *server, int port) {
-#ifdef _WIN32
+DLLEXPORT int gc_network_init(NetworkServer *server, int port) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         gc_MessageBox("WSAStartup failed", MB_ICONERROR);
         return -1;
     }
-#endif
 
     server->port = port;
     server->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (server->server_socket == (unsigned int)-1) {
         gc_MessageBox("socket() failed", MB_ICONERROR);
-#ifdef _WIN32
         WSACleanup();
-#endif
         return -1;
     }
 
@@ -42,7 +59,7 @@ int gc_network_init(NetworkServer *server, int port) {
     return 0;
 }
 
-int gc_send_file_content(SOCKET client_socket, const char *file_path) {
+DLLEXPORT int gc_send_file_content(SOCKET client_socket, const char *file_path) {
     HANDLE file = CreateFileA(
         file_path,
         GENERIC_READ,
@@ -81,7 +98,7 @@ int gc_send_file_content(SOCKET client_socket, const char *file_path) {
 }
 
 // Running the server to accept and handle connections
-int gc_network_host(NetworkServer *server, const char* file_path) {
+DLLEXPORT int gc_network_host(NetworkServer *server, const char* file_path) {
     int client_socket;
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
@@ -100,22 +117,8 @@ int gc_network_host(NetworkServer *server, const char* file_path) {
                 break;
             }
         }
-#ifdef _WIN32
         closesocket(client_socket);
-#else
-        close(client_socket);
-#endif        
     }
 
     return 0;
-}
-
-// Cleanup the server (close socket, etc.)
-void gc_network_cleanup(NetworkServer *server) {
-#ifdef _WIN32
-    closesocket(server->server_socket);
-    WSACleanup();
-#else
-    close(server->server_socket);
-#endif
 }

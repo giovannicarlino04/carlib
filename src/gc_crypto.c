@@ -1,13 +1,10 @@
-#include "gc_crypto.h"
+#include "common.h"
 
-#if defined(_WIN32)
-#include <windows.h>
-#include <wincrypt.h>
-#else
-#include <fcntl.h>
-#include <unistd.h>
-#endif
-
+#define SHA256_HASH_SIZE 32
+#define AES_BLOCK_SIZE 16
+#define AES128_KEY_SIZE 16
+#define HMAC_SHA256_KEY_SIZE 64
+    
 // ================= SHA-256 =================
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
@@ -44,7 +41,7 @@ typedef struct {
     uint32_t state[8];
 } SHA256_CTX;
 
-static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
+internal void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
     uint32_t a,b,c,d,e,f,g,h,i,t1,t2,m[64];
     
     for (i=0; i<16; ++i)
@@ -67,7 +64,7 @@ static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
     ctx->state[4] += e; ctx->state[5] += f; ctx->state[6] += g; ctx->state[7] += h;
 }
 
-static void sha256_init(SHA256_CTX *ctx) {
+internal void sha256_init(SHA256_CTX *ctx) {
     ctx->datalen = 0;
     ctx->bitlen = 0;
     ctx->state[0] = 0x6a09e667;
@@ -80,7 +77,7 @@ static void sha256_init(SHA256_CTX *ctx) {
     ctx->state[7] = 0x5be0cd19;
 }
 
-static void sha256_update(SHA256_CTX *ctx, const uint8_t *data, size_t len) {
+internal void sha256_update(SHA256_CTX *ctx, const uint8_t *data, size_t len) {
     for (size_t i = 0; i < len; ++i) {
         ctx->data[ctx->datalen++] = data[i];
         if (ctx->datalen == 64) {
@@ -91,7 +88,7 @@ static void sha256_update(SHA256_CTX *ctx, const uint8_t *data, size_t len) {
     }
 }
 
-static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
+internal void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
     uint32_t i = ctx->datalen;
     
     ctx->data[i++] = 0x80;
@@ -118,7 +115,7 @@ static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
         hash[i + j * 4] = (ctx->state[j] >> (24 - i * 8)) & 0xff;
 }
 
-void gc_sha256(const uint8_t *data, size_t len, uint8_t hash[SHA256_HASH_SIZE]) {
+DLLEXPORT void gc_sha256(const uint8_t *data, size_t len, uint8_t hash[SHA256_HASH_SIZE]) {
     SHA256_CTX ctx;
     sha256_init(&ctx);
     sha256_update(&ctx, data, len);
@@ -127,7 +124,7 @@ void gc_sha256(const uint8_t *data, size_t len, uint8_t hash[SHA256_HASH_SIZE]) 
 
 // ================= HMAC-SHA256 =================
 
-void gc_hmac_sha256(const uint8_t *key, size_t key_len,
+DLLEXPORT void gc_hmac_sha256(const uint8_t *key, size_t key_len,
                     const uint8_t *data, size_t data_len,
                     uint8_t out[SHA256_HASH_SIZE]) {
     uint8_t k_ipad[64] = {0};
@@ -241,7 +238,7 @@ static const uint8_t Rcon[11] = {
     0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
 };
 
-static void KeyExpansion(const uint8_t* key, uint8_t RoundKey[176]) {
+internal void KeyExpansion(const uint8_t* key, uint8_t RoundKey[176]) {
     uint32_t i, j, k;
     uint8_t tempa[4];
     
@@ -269,25 +266,25 @@ static void KeyExpansion(const uint8_t* key, uint8_t RoundKey[176]) {
     }
 }
 
-static void AddRoundKey(uint8_t round, uint8_t state[4][4], const uint8_t* RoundKey) {
+internal void AddRoundKey(uint8_t round, uint8_t state[4][4], const uint8_t* RoundKey) {
     for (uint8_t i = 0; i < 4; ++i)
         for (uint8_t j = 0; j < 4; ++j)
         state[j][i] ^= RoundKey[round * Nb * 4 + i * Nb + j];
 }
 
-static void SubBytes(uint8_t state[4][4]) {
+internal void SubBytes(uint8_t state[4][4]) {
     for (uint8_t i = 0; i < 4; ++i)
         for (uint8_t j = 0; j < 4; ++j)
         state[i][j] = sbox[state[i][j]];
 }
 
-static void InvSubBytes(uint8_t state[4][4]) {
+internal void InvSubBytes(uint8_t state[4][4]) {
     for (uint8_t i = 0; i < 4; ++i)
         for (uint8_t j = 0; j < 4; ++j)
         state[i][j] = rsbox[state[i][j]];
 }
 
-static void ShiftRows(uint8_t state[4][4]) {
+internal void ShiftRows(uint8_t state[4][4]) {
     uint8_t temp;
     
     temp = state[1][0];
@@ -310,7 +307,7 @@ static void ShiftRows(uint8_t state[4][4]) {
     state[3][1] = temp;
 }
 
-static void InvShiftRows(uint8_t state[4][4]) {
+internal void InvShiftRows(uint8_t state[4][4]) {
     uint8_t temp;
     
     temp = state[1][3];
@@ -333,11 +330,11 @@ static void InvShiftRows(uint8_t state[4][4]) {
     state[3][3] = temp;
 }
 
-static uint8_t xtime(uint8_t x) {
+internal uint8_t xtime(uint8_t x) {
     return ((x << 1) ^ (((x >> 7) & 1) * 0x1b));
 }
 
-static void MixColumns(uint8_t state[4][4]) {
+internal void MixColumns(uint8_t state[4][4]) {
     uint8_t i;
     uint8_t Tmp, Tm, t;
     for (i = 0; i < 4; ++i) {
@@ -351,7 +348,7 @@ static void MixColumns(uint8_t state[4][4]) {
     }
 }
 
-static void InvMixColumns(uint8_t state[4][4]) {
+internal void InvMixColumns(uint8_t state[4][4]) {
     uint8_t i;
     uint8_t a, b, c, d;
     for (i = 0; i < 4; ++i) {
@@ -367,7 +364,7 @@ static void InvMixColumns(uint8_t state[4][4]) {
     }
 }
 
-static void AES128_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t* output) {
+internal void AES128_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t* output) {
     uint8_t state[4][4];
     uint8_t RoundKey[176];
     
@@ -395,7 +392,7 @@ static void AES128_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t
         output[i * 4 + j] = state[j][i];
 }
 
-static void AES128_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t* output) {
+internal void AES128_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t* output) {
     uint8_t state[4][4];
     uint8_t RoundKey[176];
     
@@ -425,7 +422,7 @@ static void AES128_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t
 
 // ================= Random Bytes =================
 
-void gc_crypto_random(uint8_t *buf, size_t len) {
+DLLEXPORT void gc_crypto_random(uint8_t *buf, size_t len) {
 #if defined(_WIN32)
     HCRYPTPROV hProv;
     CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
