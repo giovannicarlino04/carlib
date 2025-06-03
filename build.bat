@@ -19,7 +19,6 @@ for %%f in (
     "%SRC_DIR%\dllmain.c"
     "%SRC_DIR%\gc_avi.c"
     "%SRC_DIR%\gc_binpatch.c"
-    "%SRC_DIR%\gc_common.c"
     "%SRC_DIR%\gc_crypto.c"
     "%SRC_DIR%\gc_debug.c"
     "%SRC_DIR%\gc_file.c"
@@ -44,7 +43,6 @@ link /DLL /OUT:"%DLL_DIR%\carlib.dll" /IMPLIB:"%LIB_DIR%\carlib.lib" ^
     "%OBJ_DIR%\dllmain.obj" ^
     "%OBJ_DIR%\gc_avi.obj" ^
     "%OBJ_DIR%\gc_binpatch.obj" ^
-    "%OBJ_DIR%\gc_common.obj" ^
     "%OBJ_DIR%\gc_crypto.obj" ^
     "%OBJ_DIR%\gc_debug.obj" ^
     "%OBJ_DIR%\gc_file.obj" ^

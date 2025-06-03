@@ -106,22 +106,6 @@ carlib/
 - Link against `carlib.lib` and ensure `carlib.dll` is available at runtime.
 - All public functions are exported with `__declspec(dllexport)` and use the `DLLEXPORT` macro.
 
-### Example
-
-```c
-#include "gc_file.h"
-
-int main() {
-    size_t size;
-    unsigned char* data = gc_read_file("example.txt", &size);
-    if (data) {
-        // Use data...
-        gc_free(data);
-    }
-    return 0;
-}
-```
-
 ---
 
 ## Modules Overview
